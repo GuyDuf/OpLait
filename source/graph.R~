@@ -1,0 +1,592 @@
+#############
+#
+# Script permettant de faire des graphiques
+#   Le pdf resultant se trouve dans le dossier output
+#
+#############
+
+
+# Chargement des librairies
+
+packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble")
+
+package.check <- lapply(packages, function(x) {
+   if (!require(x, character.only = TRUE)) {
+     install.packages(x, dependencies = TRUE)
+     if (!requireNamespace("BiocManager", quietly = TRUE))
+       install.packages("BiocManager")
+     BiocManager::install(x)
+library(x, character.only = TRUE)
+   }
+ }
+)
+
+args <- commandArgs(trailingOnly=TRUE)
+id = unique(args)
+
+
+#### Pour tester
+id <- list("IgG1-1_S35","IgG2-1_S36","IgG3-1_S37","IgM1-1_S38","IgM2-1_S39")
+args=id
+
+
+nom_echantillon  <- unlist(id)
+names(id) <- nom_echantillon # permet de garder le nom de lorsque j'utilise sapply
+
+IGHV_possible = c("IGHV1-7","IGHV1-10","IGHV1-14","IGHV1-17","IGHV1-21/33","IGHV1-25","IGHV1-27","IGHV1-30","IGHV1-37","IGHV1-39")
+IGHD_possible = c("IGHD1-1","IGHD1-4", "IGHD2-1","IGHD3-1","IGHD4-1","IGHD5-2","IGHD5-3","IGHD6-2","IGHD6-3","IGHD7-3","IGHD7-4","IGHD8-2","IGHD9-1")
+
+
+
+# Fonctions #
+
+name_clean_up <- function(string){
+  temp <- substring(string, first=1 ,last = (str_locate(string = string, pattern = ","))[1] -1)
+  if(is.na(temp)){
+    string #output
+  } else {
+    temp #output
+  }
+}
+
+# Chargement des fichiers necessaires # 
+
+## Raw reads
+chemin_raw_reads <- sapply(id, function(x) paste("./data/rawReads/", x,"_L001_R1_001.fastq.gz", sep =""),
+                           simplify = FALSE, USE.NAMES = TRUE)
+nbr_raw_reads <- sapply(chemin_raw_reads, function(x) length(readFastq(x)),
+                        simplify = FALSE, USE.NAMES = TRUE)
+## Trimmomatic
+chemins_trimmomatic <- sapply(id, function(x) paste("./data/trimmedReads/", x, "_1P.fastq", sep =""),
+                              simplify = FALSE, USE.NAMES = TRUE)
+trimmomatic <- sapply(chemins_trimmomatic, function(x) readFastq(x),
+                      simplify = FALSE, USE.NAMES = TRUE)
+## NGmerge
+chemins_ngmerge <- sapply(id, function(x) paste("./data/mergedReads/", x, ".log", sep =""),
+                          simplify = FALSE, USE.NAMES = TRUE)
+ngmerge <-  sapply(chemins_ngmerge, function(x) read.csv(x, sep= "\t", na.strings=c("NA")),
+                   simplify = FALSE, USE.NAMES = TRUE)
+
+## IgBLAST
+chemins_igblast <- sapply(id, function(x) paste("./output/VDJ_", x, ".csv", sep = ""),
+                          simplify = FALSE, USE.NAMES = TRUE)
+igblast <- sapply(chemins_igblast, function(x) read.csv(x, sep= "\t", na.strings=c("","NA")),
+                 simplify = FALSE, USE.NAMES = TRUE)
+igblast_raw <- igblast
+
+
+# Nettoyage des sequences restante apr�s IgBLAST
+for(i in (1:length(igblast))){
+igblast[[i]]$v_call <- sapply(igblast[[i]]$v_call, function(x) name_clean_up(x))
+igblast[[i]]$j_call <- sapply(igblast[[i]]$j_call, function(x) name_clean_up(x))
+igblast[[i]]$d_call <- sapply(igblast[[i]]$d_call, function(x) name_clean_up(x))
+igblast[[i]]        <- igblast[[i]][rowSums(is.na(igblast[[i]])) < 10,]
+igblast[[i]]        <- igblast[[i]][igblast[[i]]$stop_codon == FALSE,]
+igblast[[i]]        <- igblast[[i]][igblast[[i]]$v_frameshift == FALSE,]
+igblast[[i]]        <- igblast[[i]][igblast[[i]]$productive == TRUE,]}
+
+
+
+# Initialisation du PDF
+pdf(file = "./output/graph.pdf", width = 15, height = 10)
+
+# Nombre de sequences total #
+nbr_seq <- sapply(nom_echantillon, function(x) nrow(igblast[[x]]))
+nbr_sequence <- data.frame(Echantillon = nom_echantillon,
+                           nbr_seq = nbr_seq)
+
+ggplot(data = nbr_sequence, aes(x = Echantillon, y = nbr_seq)) +
+  geom_bar(stat = "identity", color = "black", fill = "darkblue")+
+  labs(title = "Sequences valides",
+       y = "Sequences valides",
+       x = "Echantillon") +
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text    = element_text(color = "black", face = "bold", size = 14),
+        axis.text.x  = element_text(face = "bold", size = 13))
+
+
+# Barplot sequences valide %
+
+nbr_seq <- sapply(nom_echantillon, function(x) nrow(igblast[[x]]))
+
+prct_sequence_valide <- data.frame(Echantillon = nom_echantillon,
+                                   Pourcent = nbr_seq)
+names(prct_sequence_valide) <- c("Echantillon", "Pourcent")
+for(i in (1 : nrow(nbr_sequence))){
+prct_sequence_valide[i,]$Pourcent <- (nbr_sequence[i,]$nbr_seq / nbr_raw_reads[[i]]) * 100
+}
+
+ggplot(data = prct_sequence_valide, aes(x = Echantillon, y = Pourcent)) +
+  geom_bar(stat = "identity", color = "black", fill = "darkblue")+
+  labs(title = "Pourcentage de sequences valides",
+       y = "Sequences valides (%)",
+       x = "Echantillon") +
+  ylim(0, 100) +
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text    = element_text(color = "black", face = "bold", size = 14),
+        axis.text.x  = element_text(face = "bold", size = 13))
+# Barplot sequences non utilise #
+
+##Trimmomatic
+
+nbr_read_trim <- sapply(names(trimmomatic), function(x) length(trimmomatic[[x]]),
+                        simplify = FALSE,
+                        USE.NAMES = TRUE)
+
+prct_lost_read_trim <- sapply(names(trimmomatic), function(x) ((nbr_raw_reads[[x]] - length(trimmomatic[[x]]))/nbr_raw_reads[[x]]) * 100,
+                             simplify = FALSE,
+                             USE.NAMES = TRUE)
+
+##NGmerge
+
+ngmerge_no_na <- sapply(names(ngmerge), function(x) ngmerge[[x]][!is.na(ngmerge[[x]]$OverlapLen),],
+                        simplify = FALSE,
+                        USE.NAMES = TRUE)
+
+prct_lost_read_ngmerge <- sapply(names(ngmerge_no_na), function(x) ((nbr_read_trim[[x]]-(nrow(ngmerge_no_na[[x]])))/nbr_raw_reads[[x]]) * 100,
+                           simplify = FALSE,
+                           USE.NAMES = TRUE)
+
+#d�commenter si on filtre la longueur avec le script
+#
+#nbr_read_too_short <- sapply(names(ngmerge_no_na), function(x) (nrow(ngmerge_no_na[[x]])-nrow(ngmerge_no_na[[x]][(ngmerge_no_na[[x]]$StitchedLen > 450),]))/nbr_raw_reads[[x]],
+#                                 simplify = FALSE, USE.NAMES = TRUE)
+#
+#d�commenter si on filtre la longueur avec le script
+
+##igBlast
+
+###Frameshift/codonStop
+prct_seq_igblast_removed <- sapply(names(igblast_raw),
+                                  function(x){
+                                  nbr <- nrow(igblast_raw[[x]][igblast_raw[[x]]$v_frameshift |
+                                                       !igblast_raw[[x]]$productive |
+                                                       igblast_raw[[x]]$stop_codon,])
+                                  (nbr / nbr_raw_reads[[x]]) * 100},
+                                  simplify = FALSE, USE.NAMES = TRUE)
+
+frct_lost <- list(trimmomatic = prct_lost_read_trim,
+                  ngmerge     = prct_lost_read_ngmerge,
+#                 "trop court" = nbr_read_too_short,             #d�commenter si on filtre la longueur avec le script
+                  igblast     = prct_seq_igblast_removed)
+
+### Dataframe des echantillons
+nbr_ligne <- length(frct_lost) * length(frct_lost[[1]])
+lost_seq   <- data.frame(echantillon = rep(NA, times = nbr_ligne),
+                         raison = rep(NA, times = nbr_ligne),
+                         fraction = rep(NA, times = nbr_ligne))
+k=1
+for(i in (names(frct_lost))){
+  for(j in (names(frct_lost[[i]]))){
+    lost_seq[k,]$echantillon <- j
+    lost_seq[k,]$raison <- i
+    lost_seq[k,]$fraction <- frct_lost[[i]][j]
+    k <- k + 1
+  }
+}
+
+ggplot(lost_seq, aes(fill = raison, y = fraction, x = echantillon)) + 
+  geom_bar(position = "stack", stat = "identity") +
+  labs(title="Sequences non utilisees",
+       y="Sequences non utilisees (%)",
+       x="Echantillon")+
+  coord_cartesian(ylim = c(0, 100)) +
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 14),
+        axis.text.x = element_text(face = "bold", size = 13))
+
+
+# Violinplot longueur sequence #
+
+longueur <- sapply(names(igblast), function(x) nchar(igblast[[x]]$sequence),
+                   simplify = FALSE, USE.NAMES = TRUE)
+
+data_longueur <- data.frame()
+
+temp.df <- sapply(names(longueur), function(x) data.frame(longueur = longueur[[x]],
+                                               nom = rep(x, length(longueur[[x]]))),
+       simplify = FALSE, USE.NAMES = TRUE)
+for(i in (1:length(temp.df))){
+  data_longueur <- rbind(data_longueur, temp.df[[i]])
+}
+
+ggplot(data_longueur, aes(x = nom, y=longueur))+
+  geom_violin(fill = "darkblue")+
+  geom_boxplot(width=0.1, fill = "light blue")+
+  stat_summary(fun=mean, geom="point", shape=23, size=2)+
+  labs(title="Longueur des sequences valides",
+       y="Longueur des sequences (nt)",
+       x="Echantillons")+
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 14),
+        axis.text.x = element_text(face = "bold", size = 13))
+
+# Boxplot Overlap NGMerge #
+
+overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
+                   simplify = FALSE, USE.NAMES = TRUE)
+data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
+temp.df <- sapply(names(longueur),
+                  function(x) data.frame(longueur_overlap = overlap[[x]],
+                                         nom = rep(x, length(overlap[[x]]))),
+                  simplify = FALSE, USE.NAMES = TRUE)
+for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
+
+ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
+  geom_violin(color = "black", fill = "darkblue")+
+  geom_boxplot(width=0.1, fill = "light blue")+
+  #geom_boxplot(color = "black", fill = "darkblue")+ #remplace les violin par des boxplot
+  stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
+    labs(title = "Longueur de l'overlap lors de NGMerge",
+         y = "Longueur de l'overlap (nt)",
+         x = "Echantillon")+
+    theme(title = element_text(size = 12, face = 'bold'),
+          axis.title.x = element_text(vjust = 0, size = 15),
+          axis.title.y = element_text(vjust = 2, size = 15),
+          axis.text    = element_text(color = "black", face = "bold", size = 14),
+          axis.text.x  = element_text(face = "bold", size = 13))
+
+
+# Barplot IGHJ #
+
+lapply(names(igblast), 
+       function(x) {ggplot(igblast[[x]], aes(x = igblast[[x]]$j_call))+ 
+                    geom_bar(color = "black", fill = "darkblue") +
+                    labs(title="Distribution des IGHJ",
+                    subtitle = x, 
+                    y="Nombre de sequences",
+                    x="IGHJ") +
+               theme(title =element_text(size=12, face='bold'),
+                     axis.title.x = element_text(vjust = 0, size = 15),
+                     axis.title.y = element_text(vjust = 2, size = 15),
+                     axis.text = element_text(color = "black", face = "bold", size = 14),
+                     axis.text.x = element_text(face = "bold", size = 13))})
+ 
+
+# Barplot IGHV #
+
+lapply(names(igblast), 
+       function(x) { ggplot(igblast[[x]], aes(x = igblast[[x]]$v_call))+ 
+                     geom_bar(color = "black", fill = "darkblue") +
+                     labs(title="Distribution des IGHV",
+                          subtitle = x,
+                          y="Nombre de sequences",
+                          x="IGHV")+
+                     theme(title =element_text(size=12, face='bold'),
+                           axis.title.x = element_text(vjust = 0, size = 15),
+                           axis.title.y = element_text(vjust = 2, size = 15),
+                           axis.text = element_text(color = "black", face = "bold", size = 14),
+                           axis.text.x = element_text(face = "bold", size = 13))+
+                     scale_x_discrete(limits = IGHV_possible)})
+
+ 
+ 
+# Barplot IGHV CDR3 > 40 #
+
+ 
+lapply(names(igblast), 
+       function(x) {ggplot(igblast[[x]][nchar(igblast[[x]]$cdr3_aa) >= 40,],
+                           aes(x = igblast[[x]][nchar(igblast[[x]]$cdr3_aa) >= 40,]$v_call))+ 
+                    geom_bar(color = "black", fill = "darkblue") +
+                    labs(title="Distribution des IGHV avec CDR3 >= 40aa",
+                         subtitle = x,
+                         y="Nombre de sequences",
+                         x="IGHV")+
+                    theme(title =element_text(size=12, face='bold'),
+                            axis.title.x = element_text(vjust = 0, size = 15),
+                            axis.title.y = element_text(vjust = 2, size = 15),
+                            axis.text = element_text(color = "black", face = "bold", size = 14),
+                            axis.text.x = element_text(face = "bold", size = 13))+
+                    scale_x_discrete(limits = IGHV_possible)})
+ 
+
+# Barplot IGHV CDR3 < 40 #
+
+
+lapply(names(igblast), 
+       function(x){ggplot(igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,],
+                          aes(x = igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,]$v_call))+ 
+                   geom_bar(color = "black", fill = "darkblue") +
+                   labs(title="Distribution des IGHV avec CDR3 <= 40aa",
+                        subtitle = x,
+                        y="Nombre de sequences",
+                        x="IGHV")+
+                   theme(title =element_text(size=12, face='bold'),
+                         axis.title.x = element_text(vjust = 0, size = 15),
+                         axis.title.y = element_text(vjust = 2, size = 15),
+                         axis.text = element_text(color = "black", face = "bold", size = 14),
+                         axis.text.x = element_text(face = "bold", size = 13))+
+                   scale_x_discrete(limits = IGHV_possible)})
+
+
+# Heatmap IGHV #
+ 
+IGHV.df <- data.frame()
+for(x in nom_echantillon){
+  IGHV.df <- rbind(IGHV.df,data.frame(IGHV = igblast[[x]]$v_call, echantillon = rep(x, nrow(igblast[[x]]))))
+}
+
+IGHV.df <- as.data.frame(table(IGHV.df))
+nbr_seq <- lapply(names(igblast), function(x) nrow(igblast[[x]]))
+names(nbr_seq) <- nom_echantillon
+IGHV.df <- tibble(IGHV.df, Pourcent = (IGHV.df$Freq / unlist(nbr_seq[IGHV.df$echantillon]) * 100))
+
+
+ggplot(IGHV.df, aes(x = echantillon, y = IGHV, fill = Pourcent))+
+  geom_tile(aes(fill = Pourcent), colour = 'black')+
+  scale_fill_viridis()+
+  theme(panel.background = element_rect(fill = 'white'))+
+  labs(title="Distribution des IGHV")+
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 13),
+        axis.text.x = element_text(face = "bold", size = 13))+
+  scale_y_discrete(limits = IGHV_possible)
+
+
+# Barplot IGHD #
+
+
+lapply(names(igblast), 
+       function(x) {ggplot(igblast[[x]], aes(x = igblast[[x]]$d_call))+ 
+                    geom_bar(color = "black", fill = "darkblue") +
+                    labs(title="Distribution des IGHD",
+                         subtitle = x, 
+                         y="Nombre de sequences",
+                         x="IGHD") +
+                    theme(axis.title.x = element_text(vjust = 0, size = 15),
+                          axis.title.y = element_text(vjust = 2, size = 15),
+                          axis.text = element_text(color = "black", face = "bold", size = 12),
+                          axis.text.x = element_text(face = "bold", size = 11))})
+
+
+# HEATMAP IGHD #
+
+
+IGHD.df <- data.frame()
+for(x in nom_echantillon){
+  IGHD.df <- rbind(IGHD.df,data.frame(IGHD = igblast[[x]]$d_call, Echantillon = rep(x, nrow(igblast[[x]]))))
+}
+
+IGHD.df <- as.data.frame(table(IGHD.df))
+nbr_seq <- lapply(names(igblast), function(x) nrow(igblast[[x]]))
+names(nbr_seq) <- nom_echantillon
+IGHD.df <- tibble(IGHD.df, Pourcent = (IGHD.df$Freq / unlist(nbr_seq[IGHD.df$Echantillon]) * 100))
+
+ggplot(IGHD.df, aes(x = Echantillon, y = IGHD, fill = Pourcent)) +
+  geom_tile(aes(fill = Pourcent), colour = 'black')+
+  scale_fill_viridis()+
+  theme(panel.background = element_rect(fill = 'white'))+
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 12),
+        axis.text.x = element_text(face = "bold", size = 12))+
+  labs(title="Distribution des IGHD")
+
+
+# Heatchart IGHV vs IGHD #
+
+
+lapply(names(igblast),
+       function(x){df <- data.frame(IGHV = igblast[[x]]$v_call, 
+                                    IGHD = igblast[[x]]$d_call)
+                   temp <- as.data.frame(table(df))
+                   temp <- complete(temp, IGHV = IGHV_possible, IGHD = IGHD_possible)
+                   temp[is.na(temp$Freq),]$Freq <- 0
+                   
+                   ggplot(temp, aes(x = IGHV, y = IGHD, fill = Freq)) +
+                   geom_tile(aes(fill = Freq), colour = 'black')+
+                   scale_fill_viridis()+
+                   labs(title="Distribution de IGHV et IGHD",
+                      subtitle = x)+
+                   theme(panel.background = element_rect(fill = 'white'))+
+                   theme(title =element_text(size=12, face='bold'),
+                         axis.title.x = element_text(vjust = 0, size = 15),
+                         axis.title.y = element_text(vjust = 2, size = 15),
+                         axis.text = element_text(color = "black", face = "bold", size = 13),
+                         axis.text.x = element_text(face = "bold", size = 13))+
+                   scale_x_discrete(limits = IGHV_possible)+
+                   scale_y_discrete(limits = IGHD_possible)})
+
+
+# Heatchart IGHV vs IGHD tous #
+
+allseq <- data.frame()
+for(i in (1:length(igblast))){
+  allseq <- rbind(allseq, igblast[[i]])
+}
+
+VS.df <- data.frame(IGHV = allseq$v_call, 
+                 IGHD = allseq$d_call)
+temp <- as.data.frame(table(VS.df))
+temp <- complete(temp, IGHV = IGHV_possible, IGHD = IGHD_possible)
+temp[is.na(temp$Freq),]$Freq <- 0
+
+ggplot(temp, aes(x = IGHV, y = IGHD, fill = Freq)) +
+  geom_tile(aes(fill = Freq), colour = 'black')+
+  scale_fill_viridis()+
+  labs(title="Distribution de combinaison de IGHV et IGHD",
+       subtitle = "tous")+
+  theme(panel.background = element_rect(fill = 'white'))+
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 13),
+        axis.text.x = element_text(face = "bold", size = 13))+
+  scale_x_discrete(limits = IGHV_possible)+
+  scale_y_discrete(limits = IGHD_possible)  
+
+
+# Barplot Longueur CDR3 #
+
+
+lapply(names(igblast), 
+       function(x) {ggplot(igblast[[x]], aes(x = (nchar(igblast[[x]]$cdr3_aa))))+
+                    geom_histogram(binwidth=1, color = "black", fill = "darkblue")+
+                    scale_x_continuous(expand = c(0,1)) + 
+                    scale_y_continuous(limits = c(0, NA),
+                                       expand = expansion(mult = c(0, 0.1)))+
+                    labs(title="Distribution de la longueur de CDR3",
+                         subtitle = x,
+                         y="Nombre de sequences",
+                         x="Longueur de CDR3")+
+                    theme(title =element_text(size=12, face='bold'),
+                          axis.title.x = element_text(vjust = 0, size = 15),
+                          axis.title.y = element_text(vjust = 2, size = 15),
+                          axis.text = element_text(color = "black", face = "bold", size = 14),
+                          axis.text.x = element_text(face = "bold", size = 13))})
+  
+# Boxplot Longueur CDR3 #
+
+longueur_cdr3 <- sapply(names(igblast),
+                        function(x) nchar(igblast[[x]]$cdr3_aa),
+                        simplify = FALSE, USE.NAMES = TRUE)
+data_longueur_cdr3 <- data.frame()
+temp.df <- sapply(names(longueur_cdr3), 
+                  function(x) data.frame(longueur_cdr3 = longueur_cdr3[[x]],
+                                         nom = rep(x, length(longueur_cdr3[[x]]))),
+                  simplify = FALSE, USE.NAMES = TRUE)
+
+for(i in (1:length(temp.df))){
+  data_longueur_cdr3 <- rbind(data_longueur_cdr3, temp.df[[i]])
+}
+
+ggplot(data_longueur_cdr3, aes(y = longueur_cdr3 ,x = nom))+
+#  geom_boxplot(color = "black", fill = "blue")+
+  geom_violin(fill = "darkblue")+
+  geom_boxplot(width=0.1, fill = "light blue")+
+  labs(title="Longueur de CDR3",
+       y="Longueur CDR3 (aa)",
+       x="Echantillon")+
+  theme(title =element_text(size=12, face='bold'),
+        axis.title.x = element_text(vjust = 0, size = 15),
+        axis.title.y = element_text(vjust = 2, size = 15),
+        axis.text = element_text(color = "black", face = "bold", size = 14),
+        axis.text.x = element_text(face = "bold", size = 13))
+
+
+##### Longueur de sequence selon IGHV #####
+# lapply(names(igblast), function(x) {
+#   temp.df <- data.frame(IGHV = igblast[[x]]$v_call, Longueur = nchar(igblast[[x]]$sequence_alignment))
+#  # temp.df <- data.frame(IGHV = igblast[[x]][igblast[[x]]$v_call == "IGHV1-37",]$v_call, Longueur = nchar(igblast[[x]][igblast[[x]]$v_call == "IGHV1-37",]$sequence_alignment))
+#   ggplot(temp.df, aes(x = IGHV, y = Longueur)) + 
+#     geom_violin(fill = "dark blue")+
+#     geom_boxplot(width=0.1, fill = "light blue")+
+#     stat_summary(fun=mean, geom="point", shape=23, size=2)+
+#     labs(title = "Longueur des sequences",
+#          subtitle = x,
+#          y = "Longueur sequences (nt)",
+#          x = "echantillon")+
+#     theme(title =element_text(size=12, face='bold'),
+#           axis.title.x = element_text(vjust = 0, size = 15),
+#           axis.title.y = element_text(vjust = 2, size = 15),
+#           axis.text = element_text(color = "black", face = "bold", size = 14),
+#           axis.text.x = element_text(face = "bold", size = 13))
+#   }
+# )
+
+
+
+#### COMPARAISON AVEC LES MeTHODES PReCeDENTES ######
+
+# WINDOWS #
+#values_old <-  list(G1 = read.csv(".output/G1_old.csv"),
+#                  G2 = read.csv(".output/G2_old.csv"),
+#                  G3 = read.csv(".output/G3_old.csv"),
+#                  M1 = read.csv(".output/M1_old.csv"),
+#                  M2 = read.csv(".output/M2_old.csv")) 
+  
+# LINUX #
+#values_old <-  list(G1 = read.csv("/mnt/c/Stage/IGH/output/G1_old.csv"),
+#                    G2 = read.csv("/mnt/c/Stage/IGH/output/G2_old.csv"),
+#                    G3 = read.csv("/mnt/c/Stage/IGH/output/G3_old.csv"),
+#                    M1 = read.csv("/mnt/c/Stage/IGH/output/M1_old.csv"),
+#                    M2 = read.csv("/mnt/c/Stage/IGH/output/M2_old.csv")) 
+#G1_PLOS_old = values_old[["G1"]]$PLOS_J - values_old[["G1"]]$PLOS_V
+#data_PLOS_dist <- data.frame(dist = G1_PLOS_old, nom = rep("G1 PLOS", length(G1_PLOS_old)))
+#G2_PLOS_old = values_old[["G2"]]$PLOS_J - values_old[["G2"]]$PLOS_V
+#data_PLOS_dist <- rbind(data_PLOS_dist,data.frame(dist = G2_PLOS_old, nom = rep("G2 PLOS", length(G2_PLOS_old))))
+#G3_PLOS_old = values_old[["G3"]]$PLOS_J - values_old[["G3"]]$PLOS_V
+#data_PLOS_dist <- rbind(data_PLOS_dist,data.frame(dist = G3_PLOS_old, nom= rep("G3 PLOS", length(G3_PLOS_old))))
+#M1_PLOS_old = values_old[["M1"]]$PLOS_J - values_old[["M1"]]$PLOS_V
+#data_PLOS_dist <- rbind(data_PLOS_dist,data.frame(dist = M1_PLOS_old, nom = rep("M1 PLOS", length(M1_PLOS_old))))
+#M2_PLOS_old = values_old[["M2"]]$PLOS_J - values_old[["M2"]]$PLOS_V
+#data_PLOS_dist <- rbind(data_PLOS_dist,data.frame(dist = M2_PLOS_old, nom = rep("M2 PLOS", length(M2_PLOS_old))))
+#
+#G1_IMGT_old = values_old[["G1"]]$IMGT_J - values_old[["G1"]]$IMGT_V
+#data_IMGT_dist <- data.frame(dist = G1_IMGT_old, nom = rep("G1 IMGT", length(G1_IMGT_old)))
+#G2_IMGT_old = values_old[["G2"]]$IMGT_J - values_old[["G2"]]$IMGT_V
+#data_IMGT_dist <- rbind(data_IMGT_dist,data.frame(dist = G2_IMGT_old, nom = rep("G2 IMGT", length(G2_IMGT_old))))
+#G3_IMGT_old = values_old[["G3"]]$IMGT_J - values_old[["G3"]]$IMGT_V
+#data_IMGT_dist <- rbind(data_IMGT_dist,data.frame(dist = G3_IMGT_old, nom= rep("G3 IMGT", length(G3_IMGT_old))))
+#M1_IMGT_old = values_old[["M1"]]$IMGT_J - values_old[["M1"]]$IMGT_V
+#data_IMGT_dist <- rbind(data_IMGT_dist,data.frame(dist = M1_IMGT_old, nom = rep("M1 IMGT", length(M1_IMGT_old))))
+#M2_IMGT_old = values_old[["M2"]]$IMGT_J - values_old[["M2"]]$IMGT_V
+#data_IMGT_dist <- rbind(data_IMGT_dist,data.frame(dist = M2_IMGT_old, nom = rep("M2 IMGT", length(M2_IMGT_old))))
+#
+#
+#G1 = values[["G1"]]$junction_length
+#data_dist <- data.frame(dist = G1, nom = rep("G1 IgBLAST", length(G1)))
+#G2 = values[["G2"]]$junction_length
+#data_dist <- rbind(data_dist,data.frame(dist = G2, nom = rep("G2 IgBLAST", length(G2))))
+#G3 = values[["G3"]]$junction_length
+#data_dist <- rbind(data_dist,data.frame(dist = G3, nom= rep("G3 IgBLAST", length(G3))))
+#M1 = values[["M1"]]$junction_length
+#data_dist <- rbind(data_dist,data.frame(dist = M1, nom = rep("M1 IgBLAST", length(M1))))
+#M2 = values[["M2"]]$junction_length
+#data_dist <- rbind(data_dist,data.frame(dist = M2, nom = rep("M2 IgBLAST", length(M2))))
+#
+#ggplot(data_dist, aes(y = dist ,x = nom))+
+#  geom_boxplot(data = data_dist, color = "black", fill = "blue")+
+#  geom_boxplot(data = data_IMGT_dist, color = "black", fill = "green")+
+#  geom_boxplot(data = data_PLOS_dist, color = "black", fill = "red")+
+#  labs(title="Distribution de la distance entre les regions V et J",
+#       y="Distance entr V et J (nt)",
+#       x="Echantillon")+
+#  theme(title =element_text(size=12, face='bold'),
+#        axis.title.x = element_text(vjust = 0, size = 15),
+#        axis.title.y = element_text(vjust = 2, size = 15),
+#        axis.text = element_text(color = "black", size = 14),
+#        axis.text.x = element_text( size = 13))
+#  
+
+dev.off()
+###
+
+sessionInfo()
+
+
+#lapply(names(values),function(x) nrow(values[[x]][nchar(values[[x]]$cdr3_aa) >= 40,])/nrow(values[[x]]))
+
+#view(values[["M2"]][nchar(values[["M2"]]$cdr3_aa) >= 40,])
+
