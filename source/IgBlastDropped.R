@@ -7,7 +7,7 @@
 
 
 
-packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble")
+packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble", "dplyr")
 
 package.check <- lapply(packages, function(x) {
   if (!require(x, character.only = TRUE)) {
@@ -33,7 +33,7 @@ name_clean_up <- function(string){
 
 args <- commandArgs(trailingOnly=TRUE)
 #args <-  c("25-271-IgGM2-1_S201","26-258-IgG1-1_S114","26-258-IgG1-1_S114","26-258-IgG2-1_S158","26-258-IgG2-1_S158","26-258-IgG3-1_S26","26-258-IgG3-1_S26","26-258-IgGM1-1_S70","26-258-IgGM1-1_S70","26-258-IgGM2-1_S202","20-261-IgG2-1_S152","20-261-IgG2-1_S152","20-261-IgG3-1_S20","20-261-IgG3-1_S20","20-261-IgGM1-1_S64","20-261-IgGM1-1_S64","20-261-IgGM2-1_S196","20-261-IgGM2-1_S196","21-262-IgG1-1_S109","21-262-IgG1-1_S109","21-262-IgG2-1_S153","21-262-IgG2-1_S153","22-264-IgGM2-1_S198","22-264-IgGM2-1_S198","23-267-IgG1-1_S111","23-267-IgG1-1_S111","23-267-IgG2-1_S155","23-267-IgG2-1_S155","23-267-IgG3-1_S23","23-267-IgG3-1_S23","23-267-IgGM1-1_S67","23-267-IgGM1-1_S67","23-267-IgGM2-1_S199","23-267-IgGM2-1_S199","6-253-IgG3-1_S6","6-253-IgG3-1_S6","6-253-IgGM1-1_S50","6-253-IgGM1-1_S50","6-253-IgGM2-1_S182","6-253-IgGM2-1_S182","7-603-IgG1-1_S95","7-603-IgG1-1_S95","7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
-#args <- c("7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","26-258-IgGM1-1_S70","35-603-IgG1-1_S123","6-253-IgG3-1_S6","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","20-261-IgGM1-1_S64","6-253-IgG2-1_S138","7-603-IgGM1-1_S51","21-262-IgG2-1_S153","26-258-IgG2-1_S158","23-267-IgG3-1_S23")
+args <- c("7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","26-258-IgGM1-1_S70","35-603-IgG1-1_S123","6-253-IgG3-1_S6","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","20-261-IgGM1-1_S64","6-253-IgG2-1_S138","7-603-IgGM1-1_S51","21-262-IgG2-1_S153","26-258-IgG2-1_S158","23-267-IgG3-1_S23")
 id_all <-  sort(unique(args))
 
 groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
@@ -111,13 +111,7 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
   remove(igblast.lst, num.row.aft, num.row.ig.bef,num.row.ig.aft,temp.prc.drop.reason,temp.igblast)
   
   
-  pdf("graph/graphIgBlastDropped.pdf",width=10, height=10)
   
-  axis.names =c(paste("G1 \n n=", total.reads.df[total.reads.df$class == "G1",]$nbr.reads, sep = ""),
-                paste("G2 \n n=", total.reads.df[total.reads.df$class == "G2",]$nbr.reads, sep = ""),
-                paste("G3 \n n=", total.reads.df[total.reads.df$class == "G3",]$nbr.reads, sep = ""),
-                paste("GM1 \n n=",total.reads.df[total.reads.df$class == "GM1",]$nbr.reads, sep = ""),
-                paste("GM2 \n n=",total.reads.df[total.reads.df$class == "GM2",]$nbr.reads, sep = ""))
   
 
 num.row.trim.aft <- list()
@@ -166,6 +160,12 @@ num.row.ng <- data.frame(NG.bef = unlist(num.row.bef), NG.aft = unlist(ng.lst))
 
 num.row.all <- cbind(num.row.trim,num.row.ng,num.row.ig)
 
+axis.names =c(paste("G1 \n N = " , num.row.all["G1","trim.bef"], sep = ""),
+              paste("G2 \n N = " , num.row.all["G2","trim.bef"], sep = ""),
+              paste("G3 \n N = " , num.row.all["G3","trim.bef"], sep = ""),
+              paste("GM1 \n N = ",num.row.all["GM1","trim.bef"], sep = ""),
+              paste("GM2 \n N = ",num.row.all["GM2","trim.bef"], sep = ""))
+
 prc.lost.trim <-  (1 - (num.row.all$trim.aft/num.row.all$trim.bef)) * 100
 
 prc.lost.ng   <-  (num.row.all$trim.aft - num.row.all$NG.aft)/num.row.all$trim.bef * 100
@@ -191,13 +191,89 @@ frct_lost <- rbind(frct_lost, cbind(temp, Reason = c(rep("Frameshift",5),rep("In
 frct_lost$Reason <- factor(frct_lost$Reason, levels = c("Frameshift","Incomplete VDJ","Stop Codon","Non Productive","NGMerge","Trimmomatic"))
 
 frct_lost$Percent <- as.numeric(frct_lost$Percent)
+  
+pdf("graph/graphIgBlastDropped.pdf",width=10, height=10)
 
-ggplot(data=frct_lost, aes(x = Class, y = Percent, fill = Reason))+
-  geom_bar(stat="identity", position = "stack")
 
 
-plt <- ggplot(data=frct_lost, aes(x = Class, y = Percent, fill = Reason))+
-        geom_bar(stat= "identity",position = "stack")+
+frct.lost.ordered <- frct_lost %>% arrange(Class,Reason)
+
+tot.per.ig <- unlist(list(G1 = sum(frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Frameshift",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Incomplete VDJ",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Stop Codon",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Non Productive",]$Percent),
+     G2 = sum(frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Frameshift",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Incomplete VDJ",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Stop Codon",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Non Productive",]$Percent),
+     G3 = sum(frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Frameshift",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Incomplete VDJ",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Stop Codon",]$Percent,
+              frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Non Productive",]$Percent),
+     GM1 = sum(frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Frameshift",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Incomplete VDJ",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Stop Codon",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Non Productive",]$Percent),
+     GM2 = sum(frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Frameshift",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Incomplete VDJ",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Stop Codon",]$Percent,
+               frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Non Productive",]$Percent)))
+
+
+y.pos <- data.frame(Class = sort(rep(c("G1","G2","G3","GM1","GM2"), 3)),
+                    Reason = rep(c("IgBlast","NGMerge","Trimmomatic"), 5),
+                    Position = c(tot.per.ig["G1"]/2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent + 
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "NGMerge",]$Percent / 2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent / 2,
+                                 tot.per.ig["G2"]/2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent + 
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "NGMerge",]$Percent / 2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent / 2,
+                                 tot.per.ig["G3"]/2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent + 
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "NGMerge",]$Percent / 2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent / 2,
+                                 tot.per.ig["GM1"]/2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent + 
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "NGMerge",]$Percent / 2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent / 2,
+                                 tot.per.ig["GM2"]/2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent + 
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "NGMerge",]$Percent / 2 +
+                                   frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                                 frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent / 2),
+                    Label = c(tot.per.ig["G1"],
+                              frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                              frct.lost.ordered[frct.lost.ordered$Class == "G1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                              tot.per.ig["G2"],
+                              frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                              frct.lost.ordered[frct.lost.ordered$Class == "G2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                              tot.per.ig["G3"],
+                              frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                              frct.lost.ordered[frct.lost.ordered$Class == "G3" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                              tot.per.ig["GM1"],
+                              frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                              frct.lost.ordered[frct.lost.ordered$Class == "GM1" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent,
+                              tot.per.ig["GM2"],
+                              frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "NGMerge",]$Percent,
+                              frct.lost.ordered[frct.lost.ordered$Class == "GM2" & frct.lost.ordered$Reason == "Trimmomatic",]$Percent)
+                    )
+
+#cbind(frct.lost.ordered, y.pos)[cbind(frct.lost.ordered, y.pos)$Class == "G1",]
+y.pos$Label <- formatC(y.pos$Label, digits = 2, format = "f")
+y.pos$Label <- paste(y.pos$Label, "%", sep ="")
+plt <- ggplot()+
+        geom_bar(data=frct_lost, aes(x = Class, y = Percent, fill = Reason),stat= "identity",position = "stack")+
         theme_light()+
         labs(title = "Reason for drop",
              y = "Percent of sequences dropped",
@@ -214,28 +290,21 @@ plt <- ggplot(data=frct_lost, aes(x = Class, y = Percent, fill = Reason))+
               axis.title.y = element_text(vjust = 2, size = 15),
               axis.text    = element_text(color = "black", face = "bold", size = 14),
               axis.text.x  = element_text(face = "bold", size = 13))+
-        scale_x_discrete(labels = axis.names)
+        scale_x_discrete(labels = axis.names)+
+        geom_label(data = y.pos, aes(x = Class, y = Position, label = Label),)
+
 print(plt)
 
-plt <- ggplot()+
-        geom_bar(data = total.reads.df, aes(x = class, y = nbr.reads), stat = "identity")+
-        labs(title = "Valid reads",
-              y = 'Number of reads',
-              x = "Class")+
-        theme_light() + 
-        theme(title =element_text(size=12, face='bold'),
-              axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text    = element_text(color = "black", face = "bold", size = 14),
-              axis.text.x  = element_text(face = "bold", size = 13))+
-        scale_x_discrete(labels = axis.names)
-print(plt)
+
 
 
 prc.lost <- (num.row.all$trim.bef - num.row.all$ig.aft)/num.row.all$trim.bef
 
-prc.lost.df <- data.frame(percent = prc.lost*100, class = c("G1","G2","G3","GM1","GM2"))  
+prc.lost.df <- data.frame(percent = prc.lost*100,
+                          class = c("G1","G2","G3","GM1","GM2"),
+                          nbr = (num.row.all$trim.bef - num.row.all$ig.aft))  
 
+prc.lost.df <- data.frame(prc.lost.df, label = paste(prc.lost.df$nbr, "\n ",formatC(prc.lost.df$percent, digits = 2, format = "f"),"%", sep = ""))
 
 plt<- ggplot(data = prc.lost.df, aes(x = class, y = percent)) +
        geom_bar(stat = "identity", position = "dodge", color = "black")+
@@ -249,14 +318,26 @@ plt<- ggplot(data = prc.lost.df, aes(x = class, y = percent)) +
           axis.title.y = element_text(vjust = 2, size = 15),
           axis.text    = element_text(color = "black", face = "bold", size = 14),
           axis.text.x  = element_text(face = "bold", size = 13))+
-  theme(title =element_text(size=12, face='bold'),
-        axis.title.x = element_text(vjust = 0, size = 15),
-        axis.title.y = element_text(vjust = 2, size = 15),
-        axis.text    = element_text(color = "black", face = "bold", size = 14),
-        axis.text.x  = element_text(face = "bold", size = 13))+
-  scale_x_discrete(labels = axis.names)
+      scale_x_discrete(labels = axis.names) + 
+  geom_label(data = prc.lost.df, aes(x = class, y = percent/2, label = label ))
+print(plt)
+options(scipen = 100000)
+plt <- ggplot()+
+        geom_bar(data = total.reads.df, aes(x = class, y = nbr.reads), stat = "identity", color = "black")+
+        labs(title = "Total reads",
+              y = 'Number of reads',
+              x = "Class")+
+        theme_light() + 
+        theme(title =element_text(size=12, face='bold'),
+              axis.title.x = element_text(vjust = 0, size = 15),
+              axis.title.y = element_text(vjust = 2, size = 15),
+              axis.text    = element_text(color = "black", face = "bold", size = 14),
+              axis.text.x  = element_text(face = "bold", size = 13))+
+      geom_label(data = total.reads.df, aes(x = class, y = nbr.reads/2,label = nbr.reads), stat = "identity", color = "black")
+
+#        scale_x_discrete(labels = axis.names)
 print(plt)
 
-dev.off()
+#dev.off()
 sessionInfo()
   
