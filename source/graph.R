@@ -1,7 +1,7 @@
 
 #### Chargement des librairies ####
 
-packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble", "ComplexHeatmap")
+packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble", "dplyr")
 
 package.check <- lapply(packages, function(x) {
   if (!require(x, character.only = TRUE)) {
@@ -38,6 +38,7 @@ raceName <- function(ids, rep.by, data){
 #### Arguments ####
 args <- commandArgs(trailingOnly=TRUE)
 args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
+
 id_all <-  sort(unique(args))
 
 all.graph <- FALSE
@@ -45,208 +46,197 @@ all.graph <- FALSE
 
 
 groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
-  "G2" = grep(pattern = "IgG2", x = id_all),
-  "G3" = grep(pattern = "IgG3", x = id_all),
-  "GM1" = grep(pattern = "IgGM1", x = id_all),
-  "GM2" = grep(pattern = "IgGM2", x = id_all))
+                   "G2" = grep(pattern = "IgG2", x = id_all),
+                   "G3" = grep(pattern = "IgG3", x = id_all),
+                   "GM1" = grep(pattern = "IgGM1", x = id_all),
+                   "GM2" = grep(pattern = "IgGM2", x = id_all))
 
 
+igblast.lst <- list()
 for(group in names(groupement)){
-  
   echantillons <- id_all[groupement[[group]]]
-  print(group)
-  print(echantillons)
+  chemins_igblast <- sapply(echantillons, function(x) paste("./output/VDJ_", x, ".csv_dropped.csv2", sep = ""),
+                            simplify = FALSE, USE.NAMES = TRUE)
+  igblast.lst[[group]] <- sapply(chemins_igblast, function(x) read.csv(x, sep= "\t", na.strings=c("","NA")),
+                                 simplify = FALSE, USE.NAMES = TRUE)
+}
   
-
-  IGHV_possible = c("IGHV1-7","IGHV1-10","IGHV1-14","IGHV1-17","IGHV1-21/33","IGHV1-25","IGHV1-27","IGHV1-30","IGHV1-37","IGHV1-39","IGHV1-20","IGHV1-32")
-  IGHD_possible = c("IGHD1-1","IGHD1-2/4","IGHD1-3","IGHD1-4","IGHD2-1/2/3/4","IGHD3-1/3/4","IGHD4-1","IGHD5-2","IGHD5-3/4","IGHD6-2","IGHD6-3/4","IGHD7-3","IGHD7-4","IGHD8-2","IGHD9-1/4")
-  IGHJ_possible = c("IGHJ1-4","IGHJ1-6","IGHJ2-4")
-  
-  #### Files ####
-  ## Raw reads
-  chemin_raw_reads <- sapply(echantillons, function(x) paste("./data/rawReads/", x,"_L001_R1_001.fastq.gz", sep =""),
+total.reads.lst <- list()
+for(group in names(groupement)){
+  chemin_raw_reads <- sapply(id_all[groupement[[group]]], function(x) paste("./data/rawReads/", x,"_L001_R1_001.fastq.gz", sep =""),
                              simplify = FALSE, USE.NAMES = TRUE)
   
   nbr_raw_reads <- sapply(chemin_raw_reads, function(x) length(readFastq(x)),
-                          simplify = FALSE, USE.NAMES = TRUE)
+                          simplify = FALSE, USE.NAMES = TRUE)  
+  total.reads.lst[group] <- sum(unlist(nbr_raw_reads))
+}
+  
+total.reads.df1 <- do.call(cbind.data.frame, total.reads.lst)
+total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1","G2","G3","GM1","GM2"))
+  
+  IGHV_possible = c("IGHV1-7","IGHV1-10","IGHV1-14","IGHV1-17","IGHV1-21/33","IGHV1-25","IGHV1-27","IGHV1-30","IGHV1-37","IGHV1-39","IGHV1-20","IGHV1-32")
+  IGHD_possible = c("IGHD1-1","IGHD1-2/4","IGHD1-3","IGHD1-4","IGHD2-1/2/3/4","IGHD3-1/3/4","IGHD4-1","IGHD5-2","IGHD5-3/4","IGHD6-2","IGHD6-3/4","IGHD7-3","IGHD7-4","IGHD8-2","IGHD9-1/4")
+  IGHJ_possible = c("IGHJ1-4","IGHJ1-6","IGHJ2-4")
+  #safe = igblast.lst
+  for(j in names(igblast.lst)){
+    for(i in (1:length(igblast.lst[[j]]))){
+      print(j)
+      print(i)
+      igblast.lst[[j]][[i]]$v_call <- sapply(igblast.lst[[j]][[i]]$v_call, function(x) name_clean_up(x))
+      igblast.lst[[j]][[i]]$j_call <- sapply(igblast.lst[[j]][[i]]$j_call, function(x) name_clean_up(x))
+      igblast.lst[[j]][[i]]$d_call <- sapply(igblast.lst[[j]][[i]]$d_call, function(x) name_clean_up(x))
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][!is.na(igblast.lst[[j]][[i]]$stop_codon),]
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][igblast.lst[[j]][[i]]$stop_codon == FALSE,]
 
-  ## IgBlast
-  chemins_igblast <- sapply(echantillons, function(x) paste("./output/VDJ_", x, ".csv_dropped.csv2", sep = ""),
-                            simplify = FALSE, USE.NAMES = TRUE)
-  igblast <- sapply(chemins_igblast, function(x) read.csv(x, sep= "\t", na.strings=c("","NA")),
-                    simplify = FALSE, USE.NAMES = TRUE)
-  
-  #nbr_ligne_igblast_raw <- list(rep(1, times = length(echantillons)))
-  
-  print("igblast 1/2")
-  #names(nbr_ligne_igblast_raw) <- names(igblast)
-  for(i in (1:length(igblast))){
-    igblast[[i]]$v_call <- sapply(igblast[[i]]$v_call, function(x) name_clean_up(x))
-    igblast[[i]]$j_call <- sapply(igblast[[i]]$j_call, function(x) name_clean_up(x))
-    igblast[[i]]$d_call <- sapply(igblast[[i]]$d_call, function(x) name_clean_up(x))
-    igblast[[i]]        <- igblast[[i]][igblast[[i]]$stop_codon == FALSE,]
-    igblast[[i]]        <- igblast[[i]][igblast[[i]]$v_frameshift == FALSE,]
-    igblast[[i]]        <- igblast[[i]][igblast[[i]]$productive == TRUE,]
-    igblast[[i]]        <- igblast[[i]][igblast[[i]]$complete_vdj  == TRUE,]
-    igblast[[i]]        <- igblast[[i]][rowSums(is.na(igblast[[i]])) < 4,]
-  }
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][!is.na(igblast.lst[[j]][[i]]$v_frameshift),]
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][igblast.lst[[j]][[i]]$v_frameshift == FALSE,]
 
-  print("igblast 2/2 loaded")
-  
-  
-  pdf(paste("graph/graph", group,".pdf",sep=""),width=15, height=15)
-  ####Reason to Drop####
-  
-  plt <- ggplot(data = reason_to_drop, aes(x = reason, y = number)) +
-         geom_bar(stat = 'identity') +
-         theme_light() +
-        labs(title = "Reason to drop",
-          subtitle = group,
-          y = "Number of dropped reads",
-          x = "Reason of dropped reads") +
-        theme(title =element_text(size=12, face='bold'),
-          axis.title.x = element_text(vjust = 0, size = 15),
-          axis.title.y = element_text(vjust = 2, size = 15),
-          axis.text    = element_text(color = "black", face = "bold", size = 14),
-          axis.text.x  = element_text(face = "bold", size = 13))
-  print(plt)
-  
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][!is.na(igblast.lst[[j]][[i]]$vj_in_frame),]
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][igblast.lst[[j]][[i]]$vj_in_frame == TRUE,]
 
-  if(all.graph == TRUE){
-    for(j in names(igblast)){
-      print(ggplot(igblast[[j]], aes(x = (nchar(igblast[[j]]$sequence)))) +
-              geom_histogram(binwidth=3, color = "black", fill = "darkblue") + 
-              labs(title= paste("Sequences length (N=", nrow(igblast[[j]]) ,")", sep = ""),
-                   subtitle = j,
-                   y="Number of sequences",
-                   x="Length of senquences (nt)") +
-              theme(title = element_text(size=12, face='bold'),
-                    axis.title.x = element_text(vjust = 0, size = 15),
-                    axis.title.y = element_text(vjust = 2, size = 15),
-                    axis.text = element_text(color = "black", face = "bold", size = 14),
-                    axis.text.x = element_text(face = "bold", size = 13)))
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][!is.na(igblast.lst[[j]][[i]]$complete),]
+      igblast.lst[[j]][[i]] <- igblast.lst[[j]][[i]][igblast.lst[[j]][[i]]$complete_vdj  == TRUE,]
+      
+      igblast.lst[[j]][[i]] <- na.omit(igblast.lst[[j]][[i]])
+      
     }
-    
-    print("Histogrames des longueurs des séquences : DONE")
   }
-  #### Violinplot longueur sequence ####
-  print(304)
-  longueur <- sapply(names(igblast), function(x) nchar(igblast[[x]]$sequence),
-                     simplify = FALSE, USE.NAMES = TRUE)
   
-  data_longueur <- data.frame()
-  
-  temp.df <- sapply(names(longueur), function(x) data.frame(longueur = longueur[[x]],
-                                                            nom = rep(x, length(longueur[[x]]))),
-                    simplify = FALSE, USE.NAMES = TRUE)
+  pdf("graph/graph1.pdf",width=15, height=15)
+  ####Reason to Drop####
 
-  for(i in (1:length(temp.df))){
-    data_longueur <- rbind(data_longueur, temp.df[[i]])
+  #### Violinplot longueur sequence ####
+  longueur.lst <- list()
+  for(group in names(igblast.lst)){
+    temp <- igblast.lst[[group]]
+    for(i in 1:length(temp)){
+      temp[i]
+     longueur.lst[[group]] <- append(longueur.lst[[group]], sapply(temp[i], function(x) nchar(x$sequence_alignment),
+                     simplify = TRUE, USE.NAMES = TRUE))
+      }
   }
-  if(str_sub(group, start= 1 , end = 9)=="duplicate"){
- 
-  data_longueur$nom <-  factor(data_longueur$nom, unique(data_longueur$nom)[c(1,6,11,2,7,12,3,8,13,4,9,14,5,10,15)])
-  print(318)
-  catego <- str_sub(data_longueur$nom, start = 1, end = 2)
   
-  temp_plot <- ggplot(data_longueur, aes(x = nom, y=longueur, fill = catego))+
-    geom_violin(trim = FALSE)+
+  toute <- list()
+  for(i in 1:length(longueur.lst)){
+  
+    toute[[i]] <- data.frame(longueur = longueur.lst[[i]], class = names(longueur.lst[i]))
+  }
+  
+  longueur.df <- do.call(rbind.data.frame, toute)
+  
+  nbr.row <- list() 
+  for(group in names(groupement)){
+    
+      temp <- na.omit(igblast.lst[[group]][[1]])
+      nbr.row[[group]] <- nrow(temp)
+    for(i in 2:length(igblast.lst[[group]])){
+      temp <- na.omit(igblast.lst[[group]][[i]])
+      nbr.row[[group]] <- nbr.row[[group]] + nrow(temp)
+    }
+  }
+  
+  
+  percent =   formatC(unlist(nbr.row) / total.reads.df1 * 100, digits = 2, format ="f")
+
+  options(scipen = 1000000)
+  axis.names =c(paste("G1 \n n = " ,nbr.row[["G1"]],"\n", formatC(unlist(percent[1]), digits = 2, format = "f"),"% of the ", total.reads.df1$G1 ," total reads", sep = ""),
+                paste("G2 \n n = " ,nbr.row[["G2"]],"\n", formatC(unlist(percent[2]), digits = 2, format = "f"),"% of the ", total.reads.df1$G2," total reads", sep = ""),
+                paste("G3 \n n = " ,nbr.row[["G3"]],"\n", formatC(unlist(percent[3]), digits = 2, format = "f"),"% of the ", total.reads.df1$G3," total reads", sep = ""),
+                paste("GM1 \n n = ",nbr.row[["GM1"]],"\n", formatC(unlist(percent[4]), digits = 2, format = "f"),"% of the ", total.reads.df1$GM1 ," total reads", sep = ""),
+                paste("GM2 \n n = ",nbr.row[["GM2"]],"\n", formatC(unlist(percent[5]), digits = 2, format = "f"),"% of the ", total.reads.df1$GM2 ," total reads", sep = ""))
+  
+  plt <- ggplot(data = longueur.df, aes(x= class, y = longueur))+
+         geom_violin(trim = FALSE, color = "black")+
+         geom_boxplot(width=0.1, fill = "lightblue")+
+         stat_summary(fun=mean, geom="point", shape=23, size=2)+
+         labs(title="Valid sequences length",
+              y="Sequence length (nt)",
+              x="Class")+
+         theme(title =element_text(size=12, face='bold'),
+               axis.title.x = element_text(vjust = 0, size = 15),
+               axis.title.y = element_text(vjust = 2, size = 15),
+               axis.text = element_text(color = "black", face = "bold", size = 14),
+               axis.text.x = element_text(face = "bold", size = 13))+
+         scale_x_discrete(labels = axis.names)
+
+  print(plt)
+  print("Longueur Séquences ViolinPlot : DONE")
+  print(338)
+
+  ### CDR3 GRAPHS ####
+  
+  longueur.cdr3.lst <- list()
+  for(group in names(igblast.lst)){
+    temp <- igblast.lst[[group]]
+    for(i in 1:length(temp)){
+      temp[i]
+      longueur.cdr3.lst[[group]] <- append(longueur.cdr3.lst[[group]], 
+                                           sapply(temp[i], function(x) nchar(x$cdr3_aa),
+                                           simplify = TRUE, USE.NAMES = TRUE))
+    }
+  }
+  
+  toute.cdr3 <- list()
+  for(i in 1:length(longueur.cdr3.lst)){
+    toute.cdr3[[i]] <- data.frame(longueur = longueur.cdr3.lst[[i]], class = names(longueur.cdr3.lst[i]))
+  }
+  names(toute.cdr3) <- c("G1","G2","G3","GM1","GM2")
+  longueur.cdr3.df <- do.call(rbind.data.frame, toute.cdr3)
+  
+  
+  ggplot(data = longueur.cdr3.df, aes(x= class, y = longueur))+
+    geom_violin(trim = FALSE, color = "black")+
     geom_boxplot(width=0.1, fill = "lightblue")+
     stat_summary(fun=mean, geom="point", shape=23, size=2)+
-    labs(title="Longueur des sequences valides",
-         y="Longueur des sequences (nt)",
-         x="Echantillons")+
+    labs(title="Length of CDR3 region",
+         y="Length of region (AA)",
+         x="Class")+
     theme(title =element_text(size=12, face='bold'),
           axis.title.x = element_text(vjust = 0, size = 15),
           axis.title.y = element_text(vjust = 2, size = 15),
           axis.text = element_text(color = "black", face = "bold", size = 14),
           axis.text.x = element_text(face = "bold", size = 13))+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5)) +
-    scale_fill_discrete(name = "Sample", labels = c("Original", "Duplicate", "Time"))
-  } else {
-    catego <- str_sub(str_extract(data_longueur$nom, "-[:digit:]{3,4}"),2,5)
-    temp_plot <- ggplot(data_longueur, aes(x = nom, y=longueur, fill = catego))+
-      geom_violin(trim = FALSE)+
-      geom_boxplot(width=0.1, fill = "lightblue")+
-      stat_summary(fun=mean, geom="point", shape=23, size=2)+
-      labs(title="Longueur des sequences valides",
-           y="Longueur des sequences (nt)",
-           x="Echantillons")+
-      theme(title =element_text(size=12, face='bold'),
-            axis.title.x = element_text(vjust = 0, size = 15),
-            axis.title.y = element_text(vjust = 2, size = 15),
-            axis.text = element_text(color = "black", face = "bold", size = 14),
-            axis.text.x = element_text(face = "bold", size = 13))+
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+
-      scale_fill_discrete(name = "Cow #")
+    scale_x_discrete(labels = axis.names)
+    print("ViolinPlot CDR3 : DONE")
     
-}
-  print(temp_plot)
-  print("Longueur Séquences ViolinPlot : DONE")
-  print(338)
-  #### Barplot IGHJ NO####
-   
-  if(all.graph){
-    for(x in names(igblast)){
-      temp_plot <- ggplot(igblast[[x]], aes(x = igblast[[x]]$j_call))+ 
-        geom_bar(color = "black", fill = "darkblue") +
-        labs(title="Distribution des IGHJ",
-             subtitle = x, 
-             y="Nombre de sequences",
-             x="IGHJ") +
-        theme(title =element_text(size=12, face='bold'),
-              axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text = element_text(color = "black", face = "bold", size = 14),
-              axis.text.x = element_text(face = "bold", size = 13))+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-      print(temp_plot)
+    
+    
+    less.40 <- list(); more.40 <- list(); less.40.v <- list(); more.40.v <- list(); moss.40.v <- list()
+    for(group in names(igblast.lst)){
+      nbr.row <- 0
+      for(i in 1:length(igblast.lst[[group]])){
+        temp <- na.omit(igblast.lst[[group]][[i]])
+        less.40[[group]] <- rbind(as.data.frame(less.40[[group]]),na.omit(temp[nchar(temp$cdr3_aa)<40,]))
+        more.40[[group]] <- rbind(as.data.frame(more.40[[group]]),na.omit(temp[nchar(temp$cdr3_aa)>=40,]))
+      }
+        more.40[[group]] %>% dplyr::count(v_call) %>% mutate(perc = (n / nbr.row[[group]]*100)) -> more.40.v[[group]]
+        less.40[[group]] %>% dplyr::count(v_call) %>% mutate(perc = (n / nbr.row[[group]]*100)) -> less.40.v[[group]]
+        
+        less.40.v[[group]] <- cbind(less.40.v[[group]], moss = rep("< 40aa",n = nrow(less.40.v)))
+        more.40.v[[group]] <- cbind(more.40.v[[group]], moss = rep("> 40aa",n = nrow(more.40.v)))
+        less.40.v[[group]]$position <- less.40.v[[group]]$perc/2
+        more.40.v[[group]]$position <- less.40.v[[group]][match(more.40.v[[group]]$v_call,less.40.v[[group]]$v_call),]$perc + (more.40.v[[group]]$perc)/2
+
+        moss.40.v[[group]] <- rbind(more.40.v[[group]], less.40.v[[group]])
+        moss.40.v[[group]]$moss <- factor(moss.40.v[[group]]$moss, levels = c("> 40aa","< 40aa"))
+
+        plt <- ggplot(data = moss.40.v[[group]], aes(x = v_call, y = perc, fill = moss))+
+                geom_bar(stat ="identity")+
+                theme_light()+
+                labs(title = paste("IGHV distribution of ", group, sep =""),
+                     y = "Reads (%)",
+                     x = paste("IGHV (N = ",nbr.row[[group]],")",sep=""),
+                     fill = "Lenght of cdr3")+
+                scale_fill_manual(values=c("black","grey55"))+
+          geom_label(aes(y = position, label = n), color = "black", fill = "white")
+
+        
+        print(plt)
     }
     
-    print("Barplot IGHJ : DONE")
-  }
-  
-  #### Barplot IGHV NO####
-   
-  if(all.graph){
-    for(x in names(igblast)){
-      temp_plot <- ggplot(igblast[[x]], aes(x = igblast[[x]]$v_call))+ 
-        geom_bar(color = "black", fill = "darkblue") +
-        labs(title="Distribution des IGHV",
-             subtitle = x,
-             y="Nombre de sequences",
-             x="IGHV")+
-        theme(title =element_text(size=12, face='bold'),
-              axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text = element_text(color = "black", face = "bold", size = 14),
-              axis.text.x = element_text(face = "bold", size = 13))+
-        scale_x_discrete(limits = IGHV_possible)+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-      print(temp_plot)}
+
+
     
-    print("Barplot IGHV : DONE")
-  }
-  #### Barplot IGHV CDR3 > 40 NO####
-   
-  if(all.graph){
-    for(x in names(igblast)){
-      temp_plot <- ggplot(igblast[[x]][nchar(igblast[[x]]$cdr3_aa) >= 40,],
-                          aes(x = igblast[[x]][nchar(igblast[[x]]$cdr3_aa) >= 40,]$v_call))+ 
-        geom_bar(color = "black", fill = "darkblue") +
-        labs(title="Distribution des IGHV avec CDR3 >= 40aa",
-             subtitle = x,
-             y="Nombre de sequences",
-             x="IGHV")+
-        theme(title =element_text(size=12, face='bold'),
-              axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text = element_text(color = "black", face = "bold", size = 14),
-              axis.text.x = element_text(face = "bold", size = 13))+
-        scale_x_discrete(limits = IGHV_possible)+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-      print(temp_plot)}
-    print("Barplot IGHV CDR3 > 40 : DONE")
     
     
      #### Barplot IGHV CDR3 < 40 NO####
@@ -267,128 +257,9 @@ for(group in names(groupement)){
          theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
        print(temp_plot)}
      print("Barplot IGHV CDR3 < 40 : DONE")
-   }
-   #### Heatmap IGHV NO####
+  
 
-  #### Barplot IGHD NO####
-   
-  if(all.graph){
-    for(x in names(igblast)){
-      temp_plot <- ggplot(igblast[[x]], aes(x = igblast[[x]]$d_call))+ 
-        geom_bar(color = "black", fill = "darkblue") +
-        labs(title="Distribution des IGHD",
-             subtitle = x, 
-             y="Nombre de sequences",
-             x="IGHD") +
-        theme(axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text = element_text(color = "black", face = "bold", size = 12),
-              axis.text.x = element_text(face = "bold", size = 11))+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-      print(temp_plot)}
-    print("Barplot IGHD : DONE")
-  }
-
-  #### Heatchart IGHV vs IGHD par échantillon NO####
-   
-  if(all.graph){
-  for(x in names(igblast)){
-    df <- data.frame(IGHV = igblast[[x]]$v_call, 
-                     IGHD = igblast[[x]]$d_call)
-    temp <- as.data.frame(table(df))
-    temp <- complete(temp, IGHV = IGHV_possible, IGHD = IGHD_possible)
-    temp[is.na(temp$Freq),]$Freq <- 0
-    
-    temp_plot <- ggplot(temp, aes(x = IGHV, y = IGHD, fill = Freq)) +
-      geom_tile(aes(fill = Freq), colour = 'black')+
-      scale_fill_viridis()+
-      labs(title="Distribution de IGHV et IGHD",
-           subtitle = x)+
-      theme(panel.background = element_rect(fill = 'white'))+
-      theme(title =element_text(size=12, face='bold'),
-            axis.title.x = element_text(vjust = 0, size = 15),
-            axis.title.y = element_text(vjust = 2, size = 15),
-            axis.text = element_text(color = "black", face = "bold", size = 13),
-            axis.text.x = element_text(face = "bold", size = 13))+
-      scale_x_discrete(limits = IGHV_possible)+
-      scale_y_discrete(limits = IGHD_possible)+
-      theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-    print(temp_plot)}
-  print("Heatchart IGHV vs IGHD, par séquence : DONE")
-  }
-  #### Heatchart IGHV vs IGHD tous NO ####
-   
-  if(all.graph) {
-  allseq <- data.frame()
-  for(i in (1:length(igblast))){
-    allseq <- rbind(allseq, igblast[[i]])
-  }
-  #heatmap(table(allseq))
-  VS.df <- data.frame(IGHV = allseq$v_call, 
-                      IGHD = allseq$d_call)
   
-  heatmap(table(VS.df), main = paste("IGHV/IGHD : ", group, sep=""))
-  temp <- as.data.frame.matrix(table(VS.df))
-  
-  temp <- tidyr::complete(temp, IGHV = IGHV_possible, IGHD = IGHD_possible)
-  temp[is.na(temp$Freq),]$Freq <- 0
-  heatmap(as.matrix(IGH.tb),main = paste("Combinaisons IGHV/IGHD : ",group, sep = ""))
-
-  temp
-  
-  
-  
-  IGH.df <- data.frame()
-      IGH.df <- rbind(IGH.df,data.frame(IGH = igblast[[x]]$v_call, Echantillon = rep(x, nrow(igblast[[x]]))))
-
-  IGH.df <- data.frame(echantillon = IGH.df$Echantillon, IGH = IGH.df$IGH )
-  IGH.tb <- as.data.frame.matrix(table(IGH.df))
-  IGH.tb <- IGH.tb[1:ncol(IGH.tb)]/rowSums(IGH.tb[,1:ncol(IGH.tb)])
-  
-  
-  
-    temp_plot <- ggplot(temp, aes(x = IGHV, y = IGHD, fill = Freq)) +
-    geom_tile(aes(fill = Freq), colour = 'black')+
-    scale_fill_viridis()+
-    labs(title="Distribution de combinaison de IGHV et IGHD",
-         subtitle = "tous")+
-    theme(panel.background = element_rect(fill = 'white'))+
-    theme(title =element_text(size=12, face='bold'),
-          axis.title.x = element_text(vjust = 0, size = 15),
-          axis.title.y = element_text(vjust = 2, size = 15),
-          axis.text = element_text(color = "black", face = "bold", size = 13),
-          axis.text.x = element_text(face = "bold", size = 13))+
-    scale_x_discrete(limits = IGHV_possible)+
-    scale_y_discrete(limits = IGHD_possible)  +
-    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-  
-  print(temp_plot)}
-  print("Heatchart IGHV vs IGHD, tous : DONE")
-  
-  
-  #### Barplot Longueur CDR3 NO ####
-   
-  if(all.graph){
-    for(x in names(igblast)){
-      temp_plot <- ggplot(igblast[[x]], aes(x = (nchar(igblast[[x]]$cdr3_aa))))+
-        geom_histogram(binwidth=1, color = "black", fill = "darkblue")+
-        scale_x_continuous(expand = c(0,1)) + 
-        scale_y_continuous(limits = c(0, NA),
-                           expand = expansion(mult = c(0, 0.1)))+
-        labs(title="Distribution de la longueur de CDR3",
-             subtitle = x,
-             y="Nombre de sequences",
-             x="Longueur de CDR3")+
-        theme(title =element_text(size=12, face='bold'),
-              axis.title.x = element_text(vjust = 0, size = 15),
-              axis.title.y = element_text(vjust = 2, size = 15),
-              axis.text = element_text(color = "black", face = "bold", size = 14),
-              axis.text.x = element_text(face = "bold", size = 13))+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-      print(temp_plot)}
-    print("Barplot Longueur CDR3 : DONE")
-  }
-  ##### Boxplot Longueur CDR3 NO ####
   
   longueur_cdr3 <- sapply(names(igblast),
                           function(x) nchar(igblast[[x]]$cdr3_aa),
@@ -423,14 +294,13 @@ for(group in names(groupement)){
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
   print(temp_plot)
   print("Boxplot Longueur CDR3 : DONE")
-  
+  dev.off()
   #### NGMerge#######
-  
+  pdf("graph2.pdf",15,15)
   
   
   ##### Loading Files needed for the end
    
-  if(all.graph){
   ## Trimmomatic
   chemins_trimmomatic <- sapply(echantillons, function(x) paste("./data/trimmedReads/", x, "_1P.fastq", sep =""),
                                 simplify = FALSE, USE.NAMES = TRUE)
@@ -480,7 +350,7 @@ for(group in names(groupement)){
     scale_fill_discrete(name = "Cow #")
   print(temp_plot)
   print("Boxplot Overlap NGMerge : DONE")
-  }
+
   dev.off()
   print("dev.off")
   remove(igblast)
@@ -489,6 +359,6 @@ for(group in names(groupement)){
   print("Ngmerge removed")
   gc()
   print("gc()")
-}
+
 sessionInfo()
 

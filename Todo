@@ -1,0 +1,19 @@
+ViolinPlot selon groupement
+    Longeur des séquences valides
+        inscrire le pourcentage utilisé,tailles des reads, pourcentages perdues, le nombre final, nbr de reads brutes
+    Longueur des CDR3 > 40
+
+POURQUOI IL Y EN A QUI ON DES LONGUEURS FUCKED UP PIS C'EST LESQUEL
+
+Sortir les matrice des heatmap en .rdata
+heatmap nbr de reads et non de proportion
+
+
+sortir les courbes de coverages   Done
+
+
+rechecker les papiers pour les graph? test statistique entre race
+
+
+
+Vérifier pourquoi certaines séquences post-igblast sont plus courte (<400)

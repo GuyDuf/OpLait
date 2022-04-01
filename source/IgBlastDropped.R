@@ -33,7 +33,7 @@ name_clean_up <- function(string){
 
 args <- commandArgs(trailingOnly=TRUE)
 #args <-  c("25-271-IgGM2-1_S201","26-258-IgG1-1_S114","26-258-IgG1-1_S114","26-258-IgG2-1_S158","26-258-IgG2-1_S158","26-258-IgG3-1_S26","26-258-IgG3-1_S26","26-258-IgGM1-1_S70","26-258-IgGM1-1_S70","26-258-IgGM2-1_S202","20-261-IgG2-1_S152","20-261-IgG2-1_S152","20-261-IgG3-1_S20","20-261-IgG3-1_S20","20-261-IgGM1-1_S64","20-261-IgGM1-1_S64","20-261-IgGM2-1_S196","20-261-IgGM2-1_S196","21-262-IgG1-1_S109","21-262-IgG1-1_S109","21-262-IgG2-1_S153","21-262-IgG2-1_S153","22-264-IgGM2-1_S198","22-264-IgGM2-1_S198","23-267-IgG1-1_S111","23-267-IgG1-1_S111","23-267-IgG2-1_S155","23-267-IgG2-1_S155","23-267-IgG3-1_S23","23-267-IgG3-1_S23","23-267-IgGM1-1_S67","23-267-IgGM1-1_S67","23-267-IgGM2-1_S199","23-267-IgGM2-1_S199","6-253-IgG3-1_S6","6-253-IgG3-1_S6","6-253-IgGM1-1_S50","6-253-IgGM1-1_S50","6-253-IgGM2-1_S182","6-253-IgGM2-1_S182","7-603-IgG1-1_S95","7-603-IgG1-1_S95","7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
-args <- c("7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","26-258-IgGM1-1_S70","35-603-IgG1-1_S123","6-253-IgG3-1_S6","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","20-261-IgGM1-1_S64","6-253-IgG2-1_S138","7-603-IgGM1-1_S51","21-262-IgG2-1_S153","26-258-IgG2-1_S158","23-267-IgG3-1_S23")
+#args <- c("7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","26-258-IgGM1-1_S70","35-603-IgG1-1_S123","6-253-IgG3-1_S6","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","20-261-IgGM1-1_S64","6-253-IgG2-1_S138","7-603-IgGM1-1_S51","21-262-IgG2-1_S153","26-258-IgG2-1_S158","23-267-IgG3-1_S23")
 id_all <-  sort(unique(args))
 
 groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
@@ -72,26 +72,26 @@ num.row.ig.aft <- list()
 num.row.aft <- c()
 prc.drop.reason.tot <- list()
 temp.prc.drop.reason <- c(0,0,0,0)
-nas <- list()
-nas.all <- list()
-nas.all.2 <- c(0,0,0,0)
+#nas <- list()
+#nas.all <- list()
+#nas.all.2 <- c(0,0,0,0)
 for(j in names(igblast.lst)){
   temp.igblast <- igblast.lst[[j]]
   num.row.ig.bef[j] <- sum(sapply(temp.igblast,nrow))
   for(i in (1:length(temp.igblast))){
-    nas["Codon"] <- sum(is.na(temp.igblast[[i]]$stop_codon))
+    #nas["Codon"] <- sum(is.na(temp.igblast[[i]]$stop_codon))
     stop.codon <- nrow(temp.igblast[[i]][temp.igblast[[i]]$stop_codon   == TRUE ,])/total.reads.df[j,1] * 100
     temp.igblast[[i]] <- temp.igblast[[i]][!is.na(temp.igblast[[i]]$stop_codon),]
     temp.igblast[[i]] <- temp.igblast[[i]][temp.igblast[[i]]$stop_codon == FALSE,]
-    nas["Frameshift"] <- sum(is.na(temp.igblast[[i]]$v_frameshift))
+    #nas["Frameshift"] <- sum(is.na(temp.igblast[[i]]$v_frameshift))
     frameshift <- nrow(temp.igblast[[i]][temp.igblast[[i]]$v_frameshift == TRUE ,])/total.reads.df[j,1] * 100
     temp.igblast[[i]] <- temp.igblast[[i]][!is.na(temp.igblast[[i]]$v_frameshift),]
     temp.igblast[[i]] <- temp.igblast[[i]][temp.igblast[[i]]$v_frameshift == FALSE,]
-    nas["vjFrame"] <- sum(is.na(temp.igblast[[i]]$vj_in_frame))
+    #nas["vjFrame"] <- sum(is.na(temp.igblast[[i]]$vj_in_frame))
     vj_in_frame <- nrow(temp.igblast[[i]][temp.igblast[[i]]$vj_in_frame   == FALSE,])/total.reads.df[j,1] * 100
     temp.igblast[[i]] <- temp.igblast[[i]][!is.na(temp.igblast[[i]]$vj_in_frame),]
     temp.igblast[[i]] <- temp.igblast[[i]][temp.igblast[[i]]$vj_in_frame == TRUE,]
-    nas["Complete"] <- sum(is.na(temp.igblast[[i]]$complete_vdj))
+    #nas["Complete"] <- sum(is.na(temp.igblast[[i]]$complete_vdj))
     complete.vdj <- nrow(temp.igblast[[i]][temp.igblast[[i]]$complete_vdj == FALSE,])/total.reads.df[j,1] * 100
     temp.igblast[[i]] <- temp.igblast[[i]][!is.na(temp.igblast[[i]]$complete),]
     temp.igblast[[i]] <- temp.igblast[[i]][temp.igblast[[i]]$complete_vdj  == TRUE,]
@@ -99,7 +99,7 @@ for(j in names(igblast.lst)){
     num.row.aft[i] <- nrow(temp.igblast[[i]])
     temp.prc.drop.reason <- temp.prc.drop.reason + c(stop.codon,frameshift,vj_in_frame,complete.vdj)
   }
-  nas.all[[j]] <- unlist(list(nas["Codon"],nas["Frameshift"],nas["vjFrame"],nas["Complete"]))
+  #nas.all[[j]] <- unlist(list(nas["Codon"],nas["Frameshift"],nas["vjFrame"],nas["Complete"]))
   num.row.ig.aft[[j]] <- sum(unlist(num.row.aft))
   prc.drop.reason.tot[[j]] <- temp.prc.drop.reason
   temp.prc.drop.reason <- c(0,0,0,0)
@@ -174,7 +174,7 @@ prc.lost.ig.frame         <- prc.drop.reason[prc.drop.reason$Reason == "frameshi
 prc.lost.ig.incomplete    <- prc.drop.reason[prc.drop.reason$Reason == "complete.vdj",]
 prc.lost.ig.vjFrame <- prc.drop.reason[prc.drop.reason$Reason == "vj_in_frame",]
 prc.lost.ig.Stop          <- prc.drop.reason[prc.drop.reason$Reason == "stop.codon",]
-prc.na.ig <- sapply(nas.all, function(x) sum(x)) 
+
 
 frct_lost <- cbind(trimmomatic = prc.lost.trim,
                    ngmerge     = prc.lost.ng)
@@ -291,7 +291,7 @@ plt <- ggplot()+
         axis.text    = element_text(color = "black", face = "bold", size = 14),
         axis.text.x  = element_text(face = "bold", size = 13))+
   scale_x_discrete(labels = axis.names)+
-  geom_label(data = y.pos, aes(x = Class, y = Position, label = Label),)
+  geom_label(data = y.pos, aes(x = Class, y = Position, label = Label))
 
 print(plt)
 
@@ -321,7 +321,9 @@ plt<- ggplot(data = prc.lost.df, aes(x = class, y = percent)) +
   scale_x_discrete(labels = axis.names) + 
   geom_label(data = prc.lost.df, aes(x = class, y = percent/2, label = label ))
 print(plt)
+
 options(scipen = 100000)
+
 plt <- ggplot()+
   geom_bar(data = total.reads.df, aes(x = class, y = nbr.reads), stat = "identity", color = "black")+
   labs(title = "Total reads",
