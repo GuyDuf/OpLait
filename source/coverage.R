@@ -17,14 +17,13 @@ package.check <- lapply(packages, function(x) {
 print("Package loaded!")
 
 args <- commandArgs(trailingOnly=TRUE)
-args <- c("26-258-IgGM2-1_S202","1-234-IgG1-1_S89","1-234-IgG1-1_S89","1-234-IgG2-1_S133","1-234-IgG2-1_S133","1-234-IgG3-1_S1","1-234-IgG3-1_S1","1-234-IgGM1-1_S45","1-234-IgGM1-1_S45","1-234-IgGM2-1_S177","1-234-IgGM2-1_S177","10-618-IgG1-1_S98","10-618-IgG1-1_S98","10-618-IgG2-1_S142","10-618-IgG2-1_S142","10-618-IgG3-1_S10","10-618-IgG3-1_S10","10-618-IgGM1-1_S54","10-618-IgGM1-1_S54","10-618-IgGM2-1_S186","30-275-IgG1-1_S118","30-275-IgG1-1_S118","30-275-IgG2-1_S162","30-275-IgG2-1_S162","30-275-IgG3-1_S30","30-275-IgG3-1_S30","30-275-IgGM1-1_S74","30-275-IgGM1-1_S74","30-275-IgGM2-1_S206","30-275-IgGM2-1_S206","31-277-IgG1-1_S119","31-277-IgG1-1_S119","31-277-IgG2-1_S163","31-277-IgG2-1_S163","31-277-IgG3-1_S31","31-277-IgG3-1_S31","31-277-IgGM1-1_S75","31-277-IgGM1-1_S75","31-277-IgGM2-1_S207","31-277-IgGM2-1_S207","40-281-IgG3-1_S40","40-281-IgGM1-1_S84","40-281-IgGM1-1_S84","40-281-IgGM2-1_S216","40-281-IgGM2-1_S216","41-291-IgG1-1_S129","41-291-IgG1-1_S129","41-291-IgG2-1_S173","41-291-IgG2-1_S173","41-291-IgG3-1_S41","41-291-IgG3-1_S41","41-291-IgGM1-1_S85","41-291-IgGM1-1_S85","41-291-IgGM2-1_S217","41-291-IgGM2-1_S217","42-637-IgG1-1_S130","42-637-IgG1-1_S130","42-637-IgG2-1_S174","42-637-IgG2-1_S174","42-637-IgG3-1_S42","42-637-IgG3-1_S42","42-637-IgGM1-1_S86","42-637-IgGM1-1_S86","42-637-IgGM2-1_S218","10-618-IgGM2-1_S186","12-9004-IgGM1-1_S56","14-281-IgGM2-1_S190","17-641-IgG1-1_S105","18-720-IgG3-1_S18","19-257-IgGM2-1_S195","20-261-IgG1-1_S108","21-262-IgG3-1_S21","22-264-IgGM1-1_S66","24-268-IgG1-1_S112","25-271-IgGM1-1_S69","21-262-IgG3-1_S21","21-262-IgGM1-1_S65","21-262-IgGM1-1_S65","21-262-IgGM2-1_S197","21-262-IgGM2-1_S197","22-264-IgG1-1_S110","22-264-IgG1-1_S110","22-264-IgG2-1_S154","22-264-IgG2-1_S154","22-264-IgG3-1_S22","22-264-IgG3-1_S22","22-264-IgGM1-1_S66","37-278-IgG1-1_S125","37-278-IgG1-1_S125","37-278-IgG2-1_S169","37-278-IgG2-1_S169","37-278-IgG3-1_S37","37-278-IgG3-1_S37","37-278-IgGM1-1_S81","37-278-IgGM1-1_S81","37-278-IgGM2-1_S213","37-278-IgGM2-1_S213","38-9004-IgG1-1_S126","38-9004-IgG1-1_S126","38-9004-IgG2-1_S170","38-9004-IgG2-1_S170","38-9004-IgG3-1_S38","38-9004-IgG3-1_S38","38-9004-IgGM1-1_S82","38-9004-IgGM1-1_S82","38-9004-IgGM2-1_S214","38-9004-IgGM2-1_S214","5-253-IgG1-1_S93","5-253-IgG2-1_S137","5-253-IgG2-1_S137","5-253-IgG3-1_S5","5-253-IgG3-1_S5","5-253-IgGM1-1_S49","5-253-IgGM1-1_S49","5-253-IgGM2-1_S181","5-253-IgGM2-1_S181","6-253-IgG1-1_S94","6-253-IgG1-1_S94","6-253-IgG2-1_S138","17-641-IgG2-1_S149","17-641-IgG2-1_S149","17-641-IgG3-1_S17","17-641-IgG3-1_S17","17-641-IgGM1-1_S61","17-641-IgGM1-1_S61","17-641-IgGM2-1_S193","17-641-IgGM2-1_S193","18-720-IgG1-1_S106","18-720-IgG1-1_S106","18-720-IgG2-1_S150","18-720-IgG2-1_S150","18-720-IgG3-1_S18","27-266-IgG1-1_S115","27-266-IgG1-1_S115","27-266-IgG2-1_S159","27-266-IgG2-1_S159","27-266-IgG3-1_S27","27-266-IgG3-1_S27","27-266-IgGM1-1_S71","27-266-IgGM1-1_S71","27-266-IgGM2-1_S203","27-266-IgGM2-1_S203","28-272-IgG1-1_S116","28-272-IgG1-1_S116","28-272-IgG2-1_S160","28-272-IgG2-1_S160","28-272-IgG3-1_S28","28-272-IgG3-1_S28","28-272-IgGM1-1_S72","28-272-IgGM1-1_S72","28-272-IgGM2-1_S204")
+#args <- c("26-258-IgGM2-1_S202","1-234-IgG1-1_S89","1-234-IgG1-1_S89","1-234-IgG2-1_S133","1-234-IgG2-1_S133","1-234-IgG3-1_S1","1-234-IgG3-1_S1","1-234-IgGM1-1_S45","1-234-IgGM1-1_S45","1-234-IgGM2-1_S177","1-234-IgGM2-1_S177","10-618-IgG1-1_S98","10-618-IgG1-1_S98","10-618-IgG2-1_S142","10-618-IgG2-1_S142","10-618-IgG3-1_S10","10-618-IgG3-1_S10","10-618-IgGM1-1_S54","10-618-IgGM1-1_S54","10-618-IgGM2-1_S186","30-275-IgG1-1_S118","30-275-IgG1-1_S118","30-275-IgG2-1_S162","30-275-IgG2-1_S162","30-275-IgG3-1_S30","30-275-IgG3-1_S30","30-275-IgGM1-1_S74","30-275-IgGM1-1_S74","30-275-IgGM2-1_S206","30-275-IgGM2-1_S206","31-277-IgG1-1_S119","31-277-IgG1-1_S119","31-277-IgG2-1_S163","31-277-IgG2-1_S163","31-277-IgG3-1_S31","31-277-IgG3-1_S31","31-277-IgGM1-1_S75","31-277-IgGM1-1_S75","31-277-IgGM2-1_S207","31-277-IgGM2-1_S207","40-281-IgG3-1_S40","40-281-IgGM1-1_S84","40-281-IgGM1-1_S84","40-281-IgGM2-1_S216","40-281-IgGM2-1_S216","41-291-IgG1-1_S129","41-291-IgG1-1_S129","41-291-IgG2-1_S173","41-291-IgG2-1_S173","41-291-IgG3-1_S41","41-291-IgG3-1_S41","41-291-IgGM1-1_S85","41-291-IgGM1-1_S85","41-291-IgGM2-1_S217","41-291-IgGM2-1_S217","42-637-IgG1-1_S130","42-637-IgG1-1_S130","42-637-IgG2-1_S174","42-637-IgG2-1_S174","42-637-IgG3-1_S42","42-637-IgG3-1_S42","42-637-IgGM1-1_S86","42-637-IgGM1-1_S86","42-637-IgGM2-1_S218","10-618-IgGM2-1_S186","12-9004-IgGM1-1_S56","14-281-IgGM2-1_S190","17-641-IgG1-1_S105","18-720-IgG3-1_S18","19-257-IgGM2-1_S195","20-261-IgG1-1_S108","21-262-IgG3-1_S21","22-264-IgGM1-1_S66","24-268-IgG1-1_S112","25-271-IgGM1-1_S69","21-262-IgG3-1_S21","21-262-IgGM1-1_S65","21-262-IgGM1-1_S65","21-262-IgGM2-1_S197","21-262-IgGM2-1_S197","22-264-IgG1-1_S110","22-264-IgG1-1_S110","22-264-IgG2-1_S154","22-264-IgG2-1_S154","22-264-IgG3-1_S22","22-264-IgG3-1_S22","22-264-IgGM1-1_S66","37-278-IgG1-1_S125","37-278-IgG1-1_S125","37-278-IgG2-1_S169","37-278-IgG2-1_S169","37-278-IgG3-1_S37","37-278-IgG3-1_S37","37-278-IgGM1-1_S81","37-278-IgGM1-1_S81","37-278-IgGM2-1_S213","37-278-IgGM2-1_S213","38-9004-IgG1-1_S126","38-9004-IgG1-1_S126","38-9004-IgG2-1_S170","38-9004-IgG2-1_S170","38-9004-IgG3-1_S38","38-9004-IgG3-1_S38","38-9004-IgGM1-1_S82","38-9004-IgGM1-1_S82","38-9004-IgGM2-1_S214","38-9004-IgGM2-1_S214","5-253-IgG1-1_S93","5-253-IgG2-1_S137","5-253-IgG2-1_S137","5-253-IgG3-1_S5","5-253-IgG3-1_S5","5-253-IgGM1-1_S49","5-253-IgGM1-1_S49","5-253-IgGM2-1_S181","5-253-IgGM2-1_S181","6-253-IgG1-1_S94","6-253-IgG1-1_S94","6-253-IgG2-1_S138","17-641-IgG2-1_S149","17-641-IgG2-1_S149","17-641-IgG3-1_S17","17-641-IgG3-1_S17","17-641-IgGM1-1_S61","17-641-IgGM1-1_S61","17-641-IgGM2-1_S193","17-641-IgGM2-1_S193","18-720-IgG1-1_S106","18-720-IgG1-1_S106","18-720-IgG2-1_S150","18-720-IgG2-1_S150","18-720-IgG3-1_S18","27-266-IgG1-1_S115","27-266-IgG1-1_S115","27-266-IgG2-1_S159","27-266-IgG2-1_S159","27-266-IgG3-1_S27","27-266-IgG3-1_S27","27-266-IgGM1-1_S71","27-266-IgGM1-1_S71","27-266-IgGM2-1_S203","27-266-IgGM2-1_S203","28-272-IgG1-1_S116","28-272-IgG1-1_S116","28-272-IgG2-1_S160","28-272-IgG2-1_S160","28-272-IgG3-1_S28","28-272-IgG3-1_S28","28-272-IgGM1-1_S72","28-272-IgGM1-1_S72","28-272-IgGM2-1_S204")
 id_all <-  sort(unique(args))
-nbr_echantillon = 10
 
-file_nbr = seq(from = 1, to = length(id_all), by = nbr_echantillon)
-print(file_nbr)
+#file_nbr = seq(from = 1, to = length(id_all), by = nbr_echantillon)
+#print(file_nbr)
 
-file_nbr =  file_nbr[1:length(file_nbr)]
+#file_nbr =  file_nbr[1:length(file_nbr)]
 
 print(args)
 print(id_all)
@@ -33,14 +32,17 @@ groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
                    "G2" = grep(pattern = "IgG2", x = id_all),
                    "G3" = grep(pattern = "IgG3", x = id_all),
                    "GM1" = grep(pattern = "IgGM1", x = id_all),
-                   "GM2" = grep(pattern = "IgGM2", x = id_all))
+                   "GM2" = grep(pattern = "IgGM2", x = id_all),
+                   "ALL" = grep(pattern = "Ig", x = id_all))
 
 #### Début de la loop ####
-for(groupe in groupement){
+for(group in names(groupement)){
   
+  pdf(paste("graph/coverage",group,".pdf",sep=""),width=10, height=10)
   #print(paste("Génération des graphiques pour les séquences ", y,"-", y + nbr_echantillon-1, sep =""))
   
-  id = id_all[unlist(groupe)]
+  id = id_all[unlist(groupement[group])]
+  nbr_echantillon = length(id)
   print(id)
   nom_echantillon  <- unlist(id)
   names(id) <- nom_echantillon # permet de garder le nom de lorsque j'utilise sapply
@@ -158,7 +160,6 @@ for(groupe in groupement){
   #  fsi[nchar(sread(fsi)) >= 400]
   #})
   
-  pdf(paste("graph/coverage",y,"-", y+9,".pdf",sep=""),width=10, height=10)
   
   ### added
   fastqs.filter <- list(rep(1,length(igblast)))
@@ -180,17 +181,15 @@ for(groupe in groupement){
   })#,mc.cores=5)
   
   cov.mat <- sapply(cov.fastq,colMeans)
-  matplot(n.seq.rnd,cov.mat,lty=1,lwd=4,type="l",col = 1:length(id),ylab="Number of unique sequences",xlab="number of sequences")
+  matplot(n.seq.rnd,cov.mat,lty=1,lwd=4,type="l",col = 1:length(id),main = group, ylab="Number of unique sequences",xlab="number of sequences")
   abline(a=0,b=1,lty=2,col="gray")
-  
-  
-  legend("topleft",id,lwd=3,col=1:length(id))
+  #legend("topleft",id,lwd=3,col=1:length(id))
   
   seq.depth = seq(0,200000,1000)
   
   mult.total.reads = median(unlist(nbr_raw_reads)/n.seqs)
   la.list = c("empty")
-  par(mfrow=c(4,2))
+  par(mfrow=c(2,2))
   for(i in 1:ncol(cov.mat)){
     cur.fit <- tryCatch(nls(y ~ RMAX * (1-exp(-k*x)),
                             data=list(x=n.seq.rnd,y=cov.mat[,i]),
@@ -199,7 +198,7 @@ for(groupe in groupement){
                           print(e)
                           return(names(igblast[i]))})
     if(cur.fit != names(igblast[i])){
-      plot(n.seq.rnd,cov.mat[,i],main="Fit",ylab="Num unique reads")
+      plot(n.seq.rnd,cov.mat[,i],main=paste("Fit ",names(igblast[i]),sep=""),ylab="Num unique reads")
       #print(plt)
       abline(a=0,b=1,lty=2,col="gray")
       lines(n.seq.rnd,predict(cur.fit,list(x=n.seq.rnd)))
