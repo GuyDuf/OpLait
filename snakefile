@@ -7,11 +7,12 @@ rule all:
             "data/trimmedQC/{id}_{paired}_fastqc.{extension}",
             "output/VDJ_{id}.csv",
             "output/multiqc_report.html",
-            #"graph/graph{group}.pdf",
+            "graph/graph.pdf",
             "output/VDJ_{id}.csv_dropped.csv1",
             "output/VDJ_{id}.csv_dropped.csv2",
             #"graph/graph_3.pdf",
-            "graph/heatmap{name}.pdf",
+            #"graph/heatmap{name}.pdf",
+            "graph/coverage.pdf",
             "graph/graphIgBlastDropped.pdf",
             "logiciel/igblast/database/{segment}_clean.fa.{extension2}"],
             id=ID, read=READ, paired=["1P","2P"], extension=["zip","html"], 
@@ -229,9 +230,8 @@ rule graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
         IN2 = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
-	    #IN = expand(["output/VDJ_{id}.csv"],id=ID)
     output:
-        OUT = expand(["graph/graph{group}.pdf"], group = ["G1","G2","G3"])
+        OUT = expand(["graph/graph.pdf"])
     shell:
         """
         Rscript ./source/graph.R {ID}
@@ -245,4 +245,15 @@ rule graphIgBlastDropped:
     shell:
         """
         Rscript ./source/IgBlastDropped.R {ID}
+        """
+        
+rule coverage:
+    input:
+        IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
+        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
+    output:
+        OUT = expand(["graph/coverage.pdf"])
+    shell:
+        """
+        Rscript ./source/coverage.R {ID}
         """
