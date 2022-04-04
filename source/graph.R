@@ -28,11 +28,11 @@ name_clean_up <- function(string){
 }
 
 
-raceName <- function(ids, rep.by, data){
-  to.rep <- str_locate(data[ids],"-[:alnum:]+_S[:digit:]+")
-  str_sub(data[ids], to.rep[,1]+1, to.rep[,2]) <- rep.by
-  data
-}
+#raceName <- function(ids, rep.by, data){
+#  to.rep <- str_locate(data[ids],"-[:alnum:]+_S[:digit:]+")
+#  str_sub(data[ids], to.rep[,1]+1, to.rep[,2]) <- rep.by
+#  data
+#}
   
 
 #### Arguments ####
@@ -102,7 +102,6 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
     }
   }
   
-  pdf("graph/graph1.pdf",width=15, height=15)
   ####Reason to Drop####
 
   #### Violinplot longueur sequence ####
@@ -136,17 +135,20 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
   }
   
   
-  percent =   formatC(unlist(nbr.row) / total.reads.df1 * 100, digits = 2, format ="f")
+  percent <- formatC(unlist(nbr.row / total.reads.df1) * 100, digits = 2, format ="f")
 
   options(scipen = 1000000)
-  axis.names =c(paste("G1 \n n = " ,nbr.row[["G1"]],"\n", formatC(unlist(percent[1]), digits = 2, format = "f"),"% of the ", total.reads.df1$G1 ," total reads", sep = ""),
-                paste("G2 \n n = " ,nbr.row[["G2"]],"\n", formatC(unlist(percent[2]), digits = 2, format = "f"),"% of the ", total.reads.df1$G2," total reads", sep = ""),
-                paste("G3 \n n = " ,nbr.row[["G3"]],"\n", formatC(unlist(percent[3]), digits = 2, format = "f"),"% of the ", total.reads.df1$G3," total reads", sep = ""),
-                paste("GM1 \n n = ",nbr.row[["GM1"]],"\n", formatC(unlist(percent[4]), digits = 2, format = "f"),"% of the ", total.reads.df1$GM1 ," total reads", sep = ""),
-                paste("GM2 \n n = ",nbr.row[["GM2"]],"\n", formatC(unlist(percent[5]), digits = 2, format = "f"),"% of the ", total.reads.df1$GM2 ," total reads", sep = ""))
+  axis.names =c(paste("G1 \n n = " ,nbr.row[["G1"]],"\n", formatC(unlist(percent[1]), digits = 2, format = "f"),"% of ", total.reads.df1$G1 ," reads", sep = ""),
+                paste("G2 \n n = " ,nbr.row[["G2"]],"\n", formatC(unlist(percent[2]), digits = 2, format = "f"),"% of ", total.reads.df1$G2," reads", sep = ""),
+                paste("G3 \n n = " ,nbr.row[["G3"]],"\n", formatC(unlist(percent[3]), digits = 2, format = "f"),"% of ", total.reads.df1$G3," reads", sep = ""),
+                paste("GM1 \n n = ",nbr.row[["GM1"]],"\n", formatC(unlist(percent[4]), digits = 2, format = "f"),"% of ", total.reads.df1$GM1 ," reads", sep = ""),
+                paste("GM2 \n n = ",nbr.row[["GM2"]],"\n", formatC(unlist(percent[5]), digits = 2, format = "f"),"% of ", total.reads.df1$GM2 ," reads", sep = ""))
+  
+  
+  pdf("graph/length.pdf",width=15, height=15)
   
   plt <- ggplot(data = longueur.df, aes(x= class, y = longueur))+
-         geom_violin(trim = FALSE, color = "black")+
+         geom_violin(trim = FALSE, color = "black", bw = 1.75)+
          geom_boxplot(width=0.1, fill = "lightblue")+
          stat_summary(fun=mean, geom="point", shape=23, size=2)+
          labs(title="Valid sequences length",
@@ -160,9 +162,6 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
          scale_x_discrete(labels = axis.names)
 
   print(plt)
-  print("Longueur Séquences ViolinPlot : DONE")
-  print(338)
-
   ### CDR3 GRAPHS ####
   
   longueur.cdr3.lst <- list()
@@ -175,6 +174,12 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
                                            simplify = TRUE, USE.NAMES = TRUE))
     }
   }
+  for(group in names(igblast.lst)){
+  for(i in 1:length(igblast.lst[[group]])){
+    print(group)
+    print(i)
+    print(cor(nchar(igblast.lst[[group]][[i]]$cdr3_aa), nchar(igblast.lst[[group]][[i]]$sequence_alignment)))}
+  }
   
   toute.cdr3 <- list()
   for(i in 1:length(longueur.cdr3.lst)){
@@ -184,26 +189,31 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
   longueur.cdr3.df <- do.call(rbind.data.frame, toute.cdr3)
   
   
-  ggplot(data = longueur.cdr3.df, aes(x= class, y = longueur))+
-    geom_violin(trim = FALSE, color = "black")+
-    geom_boxplot(width=0.1, fill = "lightblue")+
-    stat_summary(fun=mean, geom="point", shape=23, size=2)+
-    labs(title="Length of CDR3 region",
-         y="Length of region (AA)",
-         x="Class")+
-    theme(title =element_text(size=12, face='bold'),
-          axis.title.x = element_text(vjust = 0, size = 15),
-          axis.title.y = element_text(vjust = 2, size = 15),
-          axis.text = element_text(color = "black", face = "bold", size = 14),
-          axis.text.x = element_text(face = "bold", size = 13))+
-    scale_x_discrete(labels = axis.names)
-    print("ViolinPlot CDR3 : DONE")
-    
+  plt <- ggplot(data = longueur.cdr3.df, aes(x= class, y = longueur))+
+         geom_violin(trim = FALSE, color = "black", bw = 0.75)+
+         geom_boxplot(width=0.1, fill = "lightblue")+
+         stat_summary(fun=mean, geom="point", shape=23, size=2)+
+         labs(title="Length of CDR3 region",
+              y="Length of region (AA)",
+              x="Class")+
+         theme(title =element_text(size=12, face='bold'),
+               axis.title.x = element_text(vjust = 0, size = 15),
+               axis.title.y = element_text(vjust = 2, size = 15),
+               axis.text = element_text(color = "black", face = "bold", size = 14),
+               axis.text.x = element_text(face = "bold", size = 13))+
+         scale_x_discrete(labels = axis.names)
+         
+  print(plt)
+  
+  dev.off()
+  print("ViolinPlot CDR3 : DONE")
+         
     
     
     less.40 <- list(); more.40 <- list(); less.40.v <- list(); more.40.v <- list(); moss.40.v <- list()
     for(group in names(igblast.lst)){
-      nbr.row <- 0
+      pdf(paste("graph/moss_",group,".pdf",sep=""),15,15)
+      #nbr.row <- 0
       for(i in 1:length(igblast.lst[[group]])){
         temp <- na.omit(igblast.lst[[group]][[i]])
         less.40[[group]] <- rbind(as.data.frame(less.40[[group]]),na.omit(temp[nchar(temp$cdr3_aa)<40,]))
@@ -212,13 +222,34 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
         more.40[[group]] %>% dplyr::count(v_call) %>% mutate(perc = (n / nbr.row[[group]]*100)) -> more.40.v[[group]]
         less.40[[group]] %>% dplyr::count(v_call) %>% mutate(perc = (n / nbr.row[[group]]*100)) -> less.40.v[[group]]
         
+        for(V in IGHV_possible){
+          if(!(V %in% more.40.v[[group]]$v_call)){
+            more.40.v[[group]] <- rbind(more.40.v[[group]],c(v_call = V, n=0, perc=0))
+          }
+          if(!(V %in% less.40.v[[group]]$v_call)){
+            less.40.v[[group]] <- rbind(less.40.v[[group]],c(v_call = V, n=0, perc=0))
+          }
+        }
+        
+        more.40.v[[group]]$perc <- as.numeric(more.40.v[[group]]$perc)         
+        more.40.v[[group]]$n <- as.numeric(more.40.v[[group]]$n)         
+        
         less.40.v[[group]] <- cbind(less.40.v[[group]], moss = rep("< 40aa",n = nrow(less.40.v)))
         more.40.v[[group]] <- cbind(more.40.v[[group]], moss = rep("> 40aa",n = nrow(more.40.v)))
+        
+        less.40.v[[group]] <- less.40.v[[group]][order(less.40.v[[group]]$v_call),]
+        more.40.v[[group]] <- more.40.v[[group]][order(more.40.v[[group]]$v_call),]
+        
         less.40.v[[group]]$position <- less.40.v[[group]]$perc/2
-        more.40.v[[group]]$position <- less.40.v[[group]][match(more.40.v[[group]]$v_call,less.40.v[[group]]$v_call),]$perc + (more.40.v[[group]]$perc)/2
+        more.40.v[[group]]$position <- less.40.v[[group]]$perc + more.40.v[[group]]$perc/2
+        
+        too.close <- abs(less.40.v[[group]]$position - more.40.v[[group]]$position) < 1
 
+        more.40.v[[group]][too.close,]$position <- 1.25 
+        
         moss.40.v[[group]] <- rbind(more.40.v[[group]], less.40.v[[group]])
         moss.40.v[[group]]$moss <- factor(moss.40.v[[group]]$moss, levels = c("> 40aa","< 40aa"))
+        moss.40.v[[group]]$perc <- as.numeric(moss.40.v[[group]]$perc)
 
         plt <- ggplot(data = moss.40.v[[group]], aes(x = v_call, y = perc, fill = moss))+
                 geom_bar(stat ="identity")+
@@ -227,11 +258,29 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
                      y = "Reads (%)",
                      x = paste("IGHV (N = ",nbr.row[[group]],")",sep=""),
                      fill = "Lenght of cdr3")+
-                scale_fill_manual(values=c("black","grey55"))+
-          geom_label(aes(y = position, label = n), color = "black", fill = "white")
-
-        
+                scale_fill_manual(values=c("lightblue3","lightcoral"))+
+                geom_label(aes(y = position, label = n), color = "black", fill = c(rep("lightblue2",12),rep("lightcoral",12)))
+    
+            print(plt)
+            
+        plt <- ggplot(data = less.40.v[[group]], aes(x = v_call, y = perc))+
+          geom_bar(stat = "identity")+
+          theme_light()+
+          labs(title = paste("IGHV distribution of ", group," with cdr3 <40 aa",sep =""),
+               y = "Reads (%)",
+               x = paste("IGHV (total nbr of cdr3 <40 aa = ", sum(less.40.v[[group]]$n),")",sep=""))+
+          geom_label(aes(y = perc/2, label = n), color = "black")
         print(plt)
+        
+        plt <- ggplot(data = more.40.v[[group]], aes(x = v_call, y = perc))+
+          geom_bar(stat = "identity")+
+          theme_light()+
+          labs(title = paste("IGHV distribution of ", group," with cdr3 >40 aa",sep =""),
+               y = "Reads (%)",
+               x = paste("IGHV (total nbr of cdr3 >40 aa = ", sum(more.40.v[[group]]$n),")",sep=""))+
+          geom_label(aes(y = perc/2, label = n), color = "black")
+    print(plt)
+    dev.off()
     }
     
 
@@ -240,62 +289,62 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
     
     
      #### Barplot IGHV CDR3 < 40 NO####
-     for(x in names(igblast)){
-       temp_plot <- ggplot(igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,],
-                           aes(x = igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,]$v_call))+ 
-         geom_bar(color = "black", fill = "darkblue") +
-         labs(title="Distribution des IGHV avec CDR3 <= 40aa",
-              subtitle = x,
-              y="Nombre de sequences",
-              x="IGHV")+
-         theme(title =element_text(size=12, face='bold'),
-               axis.title.x = element_text(vjust = 0, size = 15),
-               axis.title.y = element_text(vjust = 2, size = 15),
-               axis.text = element_text(color = "black", face = "bold", size = 14),
-               axis.text.x = element_text(face = "bold", size = 13))+
-         scale_x_discrete(limits = IGHV_possible)+
-         theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
-       print(temp_plot)}
-     print("Barplot IGHV CDR3 < 40 : DONE")
+     #for(x in names(igblast)){
+     #  temp_plot <- ggplot(igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,],
+     #                      aes(x = igblast[[x]][nchar(igblast[[x]]$cdr3_aa) <= 40,]$v_call))+ 
+     #    geom_bar(color = "black", fill = "darkblue") +
+     #    labs(title="Distribution des IGHV avec CDR3 <= 40aa",
+     #         subtitle = x,
+     #         y="Nombre de sequences",
+     #         x="IGHV")+
+     #    theme(title =element_text(size=12, face='bold'),
+     #          axis.title.x = element_text(vjust = 0, size = 15),
+     #          axis.title.y = element_text(vjust = 2, size = 15),
+     #          axis.text = element_text(color = "black", face = "bold", size = 14),
+     #          axis.text.x = element_text(face = "bold", size = 13))+
+     #    scale_x_discrete(limits = IGHV_possible)+
+     #    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
+     #  print(temp_plot)}
+     #print("Barplot IGHV CDR3 < 40 : DONE")
   
 
   
   
-  longueur_cdr3 <- sapply(names(igblast),
-                          function(x) nchar(igblast[[x]]$cdr3_aa),
-                          simplify = FALSE, USE.NAMES = TRUE)
-  data_longueur_cdr3 <- data.frame()
-  temp.df <- sapply(names(longueur_cdr3), 
-                    function(x) data.frame(longueur_cdr3 = longueur_cdr3[[x]],
-                                           nom = rep(x, length(longueur_cdr3[[x]]))),
-                    simplify = FALSE, USE.NAMES = TRUE)
+  #longueur_cdr3 <- sapply(names(igblast),
+  #                        function(x) nchar(igblast[[x]]$cdr3_aa),
+  #                        simplify = FALSE, USE.NAMES = TRUE)
+  #data_longueur_cdr3 <- data.frame()
+  #temp.df <- sapply(names(longueur_cdr3), 
+  #                  function(x) data.frame(longueur_cdr3 = longueur_cdr3[[x]],
+  #                                         nom = rep(x, length(longueur_cdr3[[x]]))),
+  #                  simplify = FALSE, USE.NAMES = TRUE)
   
   
-  for(i in (1:length(temp.df))){
-    data_longueur_cdr3 <- rbind(data_longueur_cdr3, temp.df[[i]])
-  }
-  
-  data_longueur_cdr3$nom <-  factor(data_longueur_cdr3$nom, unique(data_longueur_cdr3$nom))
-  print(318)
-  catego <- str_sub(str_extract(data_longueur_cdr3$nom, "-[:digit:]{3,4}"),2,5)
-  
-  temp_plot <- ggplot(data_longueur_cdr3, aes(y = longueur_cdr3 ,x = nom, fill = catego))+
-    geom_violin()+
-    geom_boxplot(width=0.1, fill = "light blue")+
-    labs(title="Longueur de CDR3",
-         subtitle = group,
-         y="Longueur CDR3 (aa)",
-         x="Echantillon")+
-    theme(title =element_text(size=12, face='bold'),
-          axis.title.x = element_text(vjust = 0, size = 15),
-          axis.title.y = element_text(vjust = 2, size = 15),
-          axis.text = element_text(color = "black", face = "bold", size = 14),
-          axis.text.x = element_text(face = "bold", size = 13))+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
-  print(temp_plot)
-  print("Boxplot Longueur CDR3 : DONE")
-  dev.off()
-  #### NGMerge#######
+  #for(i in (1:length(temp.df))){
+  #  data_longueur_cdr3 <- rbind(data_longueur_cdr3, temp.df[[i]])
+  #}
+  #
+  #data_longueur_cdr3$nom <-  factor(data_longueur_cdr3$nom, unique(data_longueur_cdr3$nom))
+  #print(318)
+  #catego <- str_sub(str_extract(data_longueur_cdr3$nom, "-[:digit:]{3,4}"),2,5)
+  #
+  #temp_plot <- ggplot(data_longueur_cdr3, aes(y = longueur_cdr3 ,x = nom, fill = catego))+
+  #  geom_violin()+
+  #  geom_boxplot(width=0.1, fill = "light blue")+
+  #  labs(title="Longueur de CDR3",
+  #       subtitle = group,
+  #       y="Longueur CDR3 (aa)",
+  #       x="Echantillon")+
+  #  theme(title =element_text(size=12, face='bold'),
+  #        axis.title.x = element_text(vjust = 0, size = 15),
+  #        axis.title.y = element_text(vjust = 2, size = 15),
+  #        axis.text = element_text(color = "black", face = "bold", size = 14),
+  #        axis.text.x = element_text(face = "bold", size = 13))+
+  #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
+  #print(temp_plot)
+  #print("Boxplot Longueur CDR3 : DONE")
+  #dev.off()
+  ##### NGMerge#######
   pdf("graph2.pdf",15,15)
   
   
@@ -324,41 +373,41 @@ total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[,1], class = c("G1",
   
   
   
-  overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
-                    simplify = FALSE, USE.NAMES = TRUE)
-  data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
-  temp.df <- sapply(names(longueur),
-                    function(x) data.frame(longueur_overlap = overlap[[x]],
-                                           nom = rep(x, length(overlap[[x]]))),
-                    simplify = FALSE, USE.NAMES = TRUE)
-  for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
-  
-  catego <- str_sub(str_extract(data_overlap$nom, "-+...?"),2,4)
-  temp_plot <- ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
-    geom_violin(color = "black", fill = "darkblue")+
-    geom_boxplot(width=0.1, fill = "light blue")+
-    stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
-    labs(title = "Longueur de l'overlap lors de NGMerge",
-         y = "Longueur de l'overlap (nt)",
-         x = "Echantillon")+
-    theme(title = element_text(size = 12, face = 'bold'),
-          axis.title.x = element_text(vjust = 0, size = 15),
-          axis.title.y = element_text(vjust = 2, size = 15),
-          axis.text    = element_text(color = "black", face = "bold", size = 14),
-          axis.text.x  = element_text(face = "bold", size = 13))+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+
-    scale_fill_discrete(name = "Cow #")
-  print(temp_plot)
-  print("Boxplot Overlap NGMerge : DONE")
-
-  dev.off()
-  print("dev.off")
-  remove(igblast)
-  print("IgBlast Removed")
-  remove(ngmerge)
-  print("Ngmerge removed")
-  gc()
-  print("gc()")
-
+#  overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
+#                    simplify = FALSE, USE.NAMES = TRUE)
+#  data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
+#  temp.df <- sapply(names(longueur),
+#                    function(x) data.frame(longueur_overlap = overlap[[x]],
+#                                           nom = rep(x, length(overlap[[x]]))),
+#                    simplify = FALSE, USE.NAMES = TRUE)
+#  for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
+#  
+#  catego <- str_sub(str_extract(data_overlap$nom, "-+...?"),2,4)
+#  temp_plot <- ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
+#    geom_violin(color = "black", fill = "darkblue")+
+#    geom_boxplot(width=0.1, fill = "light blue")+
+#    stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
+#    labs(title = "Longueur de l'overlap lors de NGMerge",
+#         y = "Longueur de l'overlap (nt)",
+#         x = "Echantillon")+
+#    theme(title = element_text(size = 12, face = 'bold'),
+#          axis.title.x = element_text(vjust = 0, size = 15),
+#          axis.title.y = element_text(vjust = 2, size = 15),
+#          axis.text    = element_text(color = "black", face = "bold", size = 14),
+#          axis.text.x  = element_text(face = "bold", size = 13))+
+#    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+
+#    scale_fill_discrete(name = "Cow #")
+#  print(temp_plot)
+#  print("Boxplot Overlap NGMerge : DONE")
+#
+#  dev.off()
+#  print("dev.off")
+#  remove(igblast)
+#  print("IgBlast Removed")
+#  remove(ngmerge)
+#  print("Ngmerge removed")
+#  gc()
+#  print("gc()")
+#
 sessionInfo()
 
