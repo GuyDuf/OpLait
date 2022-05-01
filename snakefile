@@ -7,20 +7,21 @@ rule all:
             "data/trimmedQC/{id}_{paired}_fastqc.{extension}",
             "output/VDJ_{id}.csv",
             "output/multiqc_report.html",
-            #"graph/graph.pdf",
+            "graph/moss_{group}.pdf",
+            "graph/length.pdf",
             "output/VDJ_{id}.csv_dropped.csv1",
             "output/VDJ_{id}.csv_dropped.csv2",
             #"graph/graph_3.pdf",
             #"graph/heatmap{name}.pdf",
             "graph/coverage{group}.pdf",
             "graph/graphIgBlastDropped.pdf",
+            "csv/done.txt",
             "logiciel/igblast/database/{segment}_clean.fa.{extension2}"],
-            id=ID, read=READ, paired=["1P","2P"], extension=["zip","html"], 
+            id=ID, read=READ, paired=["1P","2P"], extension=["zip","html"],
             name=["ALL"],
             segment=["IGHV","IGHD","IGHJ"],
             extension2=["ndb","nhr","nin","nog","nos","not","nsq","ntf","nto"],
-            #,
-            group=["G1","G2","G3","GM1","GM2","ALL"])
+            group=["G1","G2","G3","GM1","GM2","All"])
 
 rule rawfastqc:
     input:
@@ -115,16 +116,6 @@ rule igblast:
         logiciel/igblast/bin/igblastn -germline_db_V {input.IGHV} -germline_db_J {input.IGHJ} -germline_db_D {input.IGHD} -organism bovine -query {input.mergedread} -auxiliary_data logiciel/igblast/optional_file/bovine_gl.aux -outfmt 19 > {output.out}
         """
 
-#rule clean:
-#    input:
-#        IN = expand(["data/mergedReads/{id}.fastq"],id=ID)
-#    output:
-#        OUT = expand(["output/{id}.fasta",id=ID)
-#    shell:
-#        """
-#        Rscript /mnt/c/Stage/IGH/source/nettoyage.R
-#        """
-
 rule fastq2fasta:
     input:
         IN = "data/mergedReads/{id}.fastq"
@@ -134,19 +125,6 @@ rule fastq2fasta:
         """
         sed -n '1~4s/^@/>/p;2~4p' {input.IN} > {output.OUT}
         """
-
-
-
-#rule graphduplicate:
-#    input:
-#        IN = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID)
-	    #IN = expand(["output/VDJ_{id}.csv"],id=ID)
-#    output:
-#        OUT = "graph/graph_3.pdf"
-#    shell:
-#        """
-#        Rscript ./source/graph3.R {ID}
-#        """
 
 rule multiqc:
     input:
@@ -163,7 +141,7 @@ rule database_IGHV:
     input:
         IN = "logiciel/igblast/database/IGHV_clean.fa"
     output:
-        expand(["logiciel/igblast/database/IGHV_clean.fa.{extension}"], 
+        expand(["logiciel/igblast/database/IGHV_clean.fa.{extension}"],
             extension=["ndb","nhr","nin","nog","nos","not","nsq","ntf","nto"])
     shell:
         """
@@ -174,7 +152,7 @@ rule database_IGHD:
     input:
         IN = "logiciel/igblast/database/IGHD_clean.fa"
     output:
-        expand(["logiciel/igblast/database/IGHD_clean.fa.{extension}"], 
+        expand(["logiciel/igblast/database/IGHD_clean.fa.{extension}"],
             extension=["ndb","nhr","nin","nog","nos","not","nsq","ntf","nto"])
     shell:
         """"
@@ -186,7 +164,7 @@ rule database_IGHJ:
     input:
         IN = "logiciel/igblast/database/IGHJ_clean.fa"
     output:
-        expand(["logiciel/igblast/database/IGHJ_clean.fa.{extension}"], 
+        expand(["logiciel/igblast/database/IGHJ_clean.fa.{extension}"],
             extension=["ndb","nhr","nin","nog","nos","not","nsq","ntf","nto"])
     shell:
         """
@@ -215,7 +193,7 @@ rule heatmap:
         """
 
 rule IGblastcsvdrop:
-    input: 
+    input:
         IN = expand(["output/VDJ_{id}.csv"], id = ID)
     output:
         OUT1 = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID),
@@ -229,9 +207,10 @@ rule IGblastcsvdrop:
 rule graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
+        IN2 = "csv/done.txt"
     output:
-        OUT = expand(["graph/graph.pdf"])
+        OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"]),
+        OUT2= "graph/length.pdf"
     shell:
         """
         Rscript ./source/graph.R {ID}
@@ -246,14 +225,24 @@ rule graphIgBlastDropped:
         """
         Rscript ./source/IgBlastDropped.R {ID}
         """
-        
+
 rule coverage:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
         IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
     output:
-        OUT = expand(["graph/coverage{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","ALL"])
+        OUT = expand(["graph/coverage{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     shell:
         """
         Rscript ./source/coverage.R {ID}
+        """
+rule csvLength:
+    input:
+        IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
+        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
+    output:
+        OUT = "csv/done.txt"
+    shell:
+        """
+        Rscript ./source/length_csv.R {ID}
         """
