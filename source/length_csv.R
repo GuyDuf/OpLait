@@ -15,11 +15,11 @@ package.check <- lapply(packages, function(x) {
     if (!requireNamespace("BiocManager", quietly = TRUE))
       install.packages("BiocManager")
     BiocManager::install(x)
-    library(x, character.only = TRUE)
+    library(x, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)
   }
 }
 )
-print("Package loaded succesfully!")
+print("Package loaded")
 
 #### Functions ####
 
@@ -64,8 +64,6 @@ for(group in names(groupement)){
 
 for(j in names(igblast.lst)){
   for(i in (1:length(igblast.lst[[j]]))){
-    print(j)
-    print(i)
     igblast.lst[[j]][[i]]$v_call <- sapply(igblast.lst[[j]][[i]]$v_call, function(x) name_clean_up(x))
     igblast.lst[[j]][[i]]$j_call <- sapply(igblast.lst[[j]][[i]]$j_call, function(x) name_clean_up(x))
     igblast.lst[[j]][[i]]$d_call <- sapply(igblast.lst[[j]][[i]]$d_call, function(x) name_clean_up(x))
@@ -92,7 +90,7 @@ for(j in names(igblast.lst)){
 
 
 for(group in names(groupement)){
-  print(group)
+  print(paste("Generating length files for ", group, sep=""))
   for(i in names(igblast.lst[[group]])){
     write.csv(igblast.lst[[group]][[i]][,-1], paste("csv/",i,"_length.csv",sep = ""))
     }

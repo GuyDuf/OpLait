@@ -11,11 +11,11 @@ package.check <- lapply(packages, function(x) {
     if (!requireNamespace("BiocManager", quietly = TRUE))
       install.packages("BiocManager")
     BiocManager::install(x)
-    library(x, character.only = TRUE)
+    library(x, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)
   }
 }
 )
-print("Package loaded succesfully!")
+print("Package loaded")
 
 
 # Only keeps the first result of igBlast
@@ -54,15 +54,17 @@ heatmapper <- function(data, VDJ, group){
   IGH.df <- data.frame(echantillon = IGH.df$Echantillon, IGH = IGH.df$IGH )
   IGH.tb <- as.data.frame.matrix(table(IGH.df))
   IGH.tb <- IGH.tb[1:ncol(IGH.tb)]/rowSums(IGH.tb[,1:ncol(IGH.tb)])
+  
   as.matrix(IGH.tb)
 }
+
 
 
 #Gets the names of the reads to use
 args <- commandArgs(trailingOnly=TRUE)
 
 # For testing
-  #args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
+  #args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","10-618-IgG3-1_S10","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
 
 id_all <-  sort(unique(args))
 lookup <- read.csv(file = "./data/info.csv", row.names = 1)
@@ -77,7 +79,7 @@ groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
                    "ALL" = grep(pattern = "", x = id_all))
 
 IGHV_possible <-  c("IGHV1-7","IGHV1-10","IGHV1-14","IGHV1-17","IGHV1-21/33","IGHV1-25","IGHV1-27","IGHV1-30","IGHV1-37","IGHV1-39","IGHV1-20","IGHV1-32")
-IGHD_possible <-  c("IGHD1-1","IGHD1-2/4","IGHD1-3","IGHD1-4","IGHD2-1/2/3/4","IGHD3-1/3/4","IGHD4-1","IGHD5-2","IGHD5-3/4","IGHD6-2","IGHD6-3/4","IGHD7-3","IGHD7-4","IGHD8-2","IGHD9-1/4")
+IGHD_possible <-  c("IGHD1-1","IGHD1-2/4","IGHD1-3","IGHD2-1/2/3/4","IGHD3-1/3/4","IGHD4-1","IGHD5-2","IGHD5-3/4","IGHD6-2","IGHD6-3/4","IGHD7-3","IGHD7-4","IGHD8-2","IGHD9-1/4")
 IGHJ_possible <-  c("IGHJ1-4","IGHJ1-6","IGHJ2-4")
 
 for(group in names(groupement)){
@@ -85,8 +87,8 @@ for(group in names(groupement)){
   
   # Select the group of reads to use
   echantillons <- id_all[groupement[[group]]]
-  
-  
+
+    
   # read the files
   chemin_raw_reads <- sapply(echantillons, function(x) paste("./data/rawReads/", x,"_L001_R1_001.fastq.gz", sep =""),
                              simplify = FALSE, USE.NAMES = TRUE)
@@ -120,7 +122,7 @@ for(group in names(groupement)){
   # I want to keep empty IGHD
   #  igblast[[i]] <- na.omit(igblast[[i]])
   }
-  print("removed unwanted reads")
+  print("Removed unwanted reads")
   
   
   col_fun = viridis(100)
@@ -153,7 +155,8 @@ for(group in names(groupement)){
                                         Time = colorTime,
                                         Class = colorClass))
     pdf(paste("graph/heatmap", group,".pdf",sep=""),width=20, height=15)
-    print(Heatmap(t(to.hm[,1:(ncol(to.hm)-4)]),
+
+    print(Heatmap(t(to.hm[,c(IGHV_possible,IGHD_possible,IGHJ_possible)]),
                   col = col_fun, column_title = group,
                   row_names_gp = gpar(fontsize = 8),
                   column_names_gp = gpar(fontsize = 5),
@@ -162,7 +165,7 @@ for(group in names(groupement)){
     dev.off()
     
     pdf(paste("graph/heatmap", group,"_withoutJ.pdf",sep=""),width=20, height=15)
-    print(Heatmap(t(to.hm[,1:(ncol(to.hm)-7)]),
+    print(Heatmap(t(to.hm[,c(IGHV_possible,IGHD_possible)]),
                   col = col_fun, column_title = group,
                   row_names_gp = gpar(fontsize = 8),
                   column_names_gp = gpar(fontsize = 5),
@@ -176,9 +179,18 @@ for(group in names(groupement)){
                              col = list(Race = colorRace,
                                         Duplicate = colorDuplicate,
                                         Time = colorTime))
+    HA <-  HeatmapAnnotation(Race = to.hm[,ncol(to.hm)-3],
+                             Duplicate = to.hm[,ncol(to.hm)-2],
+                             Time = to.hm[,ncol(to.hm)-1],
+                             Class = to.hm[,ncol(to.hm)],
+                             col = list(Race = colorRace,
+                                        Duplicate = colorDuplicate,
+                                        Time = colorTime,
+                                        Class = colorClass))
     pdf(paste("graph/heatmap", group,".pdf",sep=""),width=15, height=15)
 
-    print(Heatmap(t(to.hm[,1:(ncol(to.hm)-4)]),
+
+    print(Heatmap(t(to.hm[,c(IGHV_possible,IGHD_possible,IGHJ_possible)]),
                   col = col_fun, column_title = group,
                   row_names_gp = gpar(fontsize = 8),
                   column_names_gp = gpar(fontsize = 8),
@@ -187,7 +199,8 @@ for(group in names(groupement)){
 
     dev.off()
     pdf(paste("graph/heatmap", group,"_withoutJ.pdf",sep=""),width=20, height=15)
-    print(Heatmap(t(to.hm[,1:(ncol(to.hm)-7)]),
+
+    print(Heatmap(t(to.hm[,c(IGHV_possible,IGHD_possible)]),
                   col = col_fun, column_title = group,
                   row_names_gp = gpar(fontsize = 8),
                   column_names_gp = gpar(fontsize = 5),
@@ -195,7 +208,6 @@ for(group in names(groupement)){
                   top_annotation = HA))
     dev.off()
   }
-  
-  print("HEATMAP VDJ : DONE")
-   
 }
+
+print("Heatmap : DONE")

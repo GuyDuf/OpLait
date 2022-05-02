@@ -10,11 +10,49 @@ package.check <- lapply(packages, function(x) {
       install.packages("BiocManager")
     }
     BiocManager::install(x)
-    library(x, character.only = TRUE)
+    library(x, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)
   }
 })
 
 print("Package loaded!")
+
+# Only keep the first result of igBlast
+name_clean_up <- function(string) {
+  temp <- substring(string, first = 1, last = (str_locate(string = string, pattern = ","))[1] - 1)
+  if (is.na(temp)) {
+    string
+  } else {
+    temp
+  }
+}
+
+coverageSeqPerc <- function(fastq) {
+  perc.seq <- seq(0.05, 1, 0.05)
+  N <- length(fastq)
+  rand.n <- 10
+  to.ret <- sapply(perc.seq, function(pi) {
+    cur.n <- floor(pi * N)
+    as.numeric(lapply(1:rand.n, function(ri) {
+      length(unique(sread(fastq[sample(1:N, cur.n)])))
+    }))
+  })
+  colnames(to.ret) <- sprintf("%.2f", perc.seq)
+  to.ret
+}
+
+coverageSeqNum <- function(fastq, n.seq.rnd = seq(1000, 5000, 200)) {
+  N <- length(fastq)
+  rand.n <- 10
+  to.ret <- sapply(n.seq.rnd, function(ni) {
+    cur.n <- ni
+    as.numeric(lapply(1:rand.n, function(ri) {
+      length(unique(fastq[sample(1:N, cur.n)]))
+    }))
+  })
+  colnames(to.ret) <- sprintf("%d", n.seq.rnd)
+  to.ret
+}
+
 
 args <- commandArgs(trailingOnly = TRUE)
 # For testing
@@ -25,43 +63,32 @@ id_all <- sort(unique(args))
 print(args)
 print(id_all)
 
+
+# create group of class
 groupement <- list(
   "G1" = grep(pattern = "IgG1", x = id_all),
   "G2" = grep(pattern = "IgG2", x = id_all),
   "G3" = grep(pattern = "IgG3", x = id_all),
   "GM1" = grep(pattern = "IgGM1", x = id_all),
   "GM2" = grep(pattern = "IgGM2", x = id_all),
-  "ALL" = grep(pattern = "Ig", x = id_all)
+  "All" = grep(pattern = "Ig", x = id_all)
 )
 
-#### Début de la loop ####
+
 for (group in names(groupement)) {
   pdf(paste("graph/coverage", group, ".pdf", sep = ""), width = 10, height = 10)
 
   id <- id_all[unlist(groupement[group])]
   nbr_echantillon <- length(id)
-  print(id)
+
   nom_echantillon <- unlist(id)
-  names(id) <- nom_echantillon # permet de garder le nom de lorsque j'utilise sapply
+  names(id) <- nom_echantillon # keep the names when using sapply
 
   IGHV_possible <- c("IGHV1-7", "IGHV1-10", "IGHV1-14", "IGHV1-17", "IGHV1-21/33", "IGHV1-25", "IGHV1-27", "IGHV1-30", "IGHV1-37", "IGHV1-39", "IGHV1-20", "IGHV1-32")
   IGHD_possible <- c("IGHD1-1", "IGHD1-2/4", "IGHD1-3", "IGHD1-4", "IGHD2-1/2/3/4", "IGHD3-1/3/4", "IGHD4-1", "IGHD5-2", "IGHD5-3/4", "IGHD6-2", "IGHD6-3/4", "IGHD7-3", "IGHD7-4", "IGHD8-2", "IGHD9-1/4")
   IGHJ_possible <- c("IGHJ1-4", "IGHJ1-6", "IGHJ2-4")
-  print(43)
 
-  # Fonctions #
-
-  name_clean_up <- function(string) {
-    temp <- substring(string, first = 1, last = (str_locate(string = string, pattern = ","))[1] - 1)
-    if (is.na(temp)) {
-      string
-    } else {
-      temp
-    }
-  }
-
-  # Chargement des fichiers necessaires #
-  ## IgBLAST
+# Loading igblast results
   chemins_igblast <- sapply(nom_echantillon, function(x) paste("./output/VDJ_", x, ".csv_dropped.csv2", sep = ""),
     simplify = FALSE, USE.NAMES = TRUE
   )
@@ -69,20 +96,19 @@ for (group in names(groupement)) {
     simplify = FALSE, USE.NAMES = TRUE
   )
 
-
+# number of reads at start
   nbr_ligne_igblast_raw <- list(rep(1, times = nbr_echantillon))
 
   keep <- c("sequence_alignment", "stop_codon", "v_frameshift", "vj_in_frame", "complete_vdj")
 
-  print(67)
+# removing unwanted columns
   for (i in (1:length(igblast))) {
     igblast[[i]] <- igblast[[i]][, (colnames(igblast[[i]]) %in% keep)]
     nbr_ligne_igblast_raw[[i]] <- nrow(igblast[[i]])
   }
-
-  print(72)
   names(nbr_ligne_igblast_raw) <- names(igblast)
 
+  # removing unwanted reads
   for (j in names(igblast)) {
     for (i in (1:length(igblast[[j]]))) {
       igblast[[j]] <- igblast[[j]][!is.na(igblast[[j]]$stop_codon), ]
@@ -96,10 +122,9 @@ for (group in names(groupement)) {
     }
   }
 
+  print("removed unwanted reads")
 
-  print("igblast loaded")
-
-  ## Raw reads
+# Loading raw reads
   chemin_raw_reads <- sapply(id, function(x) paste("./data/rawReads/", x, "_L001_R1_001.fastq.gz", sep = ""),
     simplify = FALSE, USE.NAMES = TRUE
   )
@@ -107,16 +132,9 @@ for (group in names(groupement)) {
   nbr_raw_reads <- sapply(chemin_raw_reads, function(x) length(readFastq(x)),
     simplify = FALSE, USE.NAMES = TRUE
   )
+  
+  print("rawreads loaded")
 
-  #### Pour les ajouts provenant de coverage.R
-  fastqs.filter <- list(rep(1, times = nbr_echantillon))
-
-
-  for (j in 1:length(igblast)) {
-    fastqs.filter[[j]] <- igblast[[j]]$sequence
-  }
-
-  # Initialisation du PDF
   #### Coverage ####
   ## Estimate the number of new sequences we get as we increase the number of sequenced reads
   ## the idea is to know at with depth we will reach saturation
@@ -126,51 +144,15 @@ for (group in names(groupement)) {
     names(n.seqs) <- names(igblast)
   }
 
-  print(n.seqs)
-
-  coverageSeqPerc <- function(fastq) {
-    perc.seq <- seq(0.05, 1, 0.05)
-    N <- length(fastq)
-    rand.n <- 10
-    to.ret <- sapply(perc.seq, function(pi) {
-      cur.n <- floor(pi * N)
-      as.numeric(lapply(1:rand.n, function(ri) {
-        length(unique(sread(fastq[sample(1:N, cur.n)])))
-      }))
-    })
-    colnames(to.ret) <- sprintf("%.2f", perc.seq)
-    to.ret
-  }
-
-  coverageSeqNum <- function(fastq, n.seq.rnd = seq(1000, 5000, 200)) {
-    N <- length(fastq)
-    rand.n <- 10
-    to.ret <- sapply(n.seq.rnd, function(ni) {
-      cur.n <- ni
-      as.numeric(lapply(1:rand.n, function(ri) {
-        length(unique(fastq[sample(1:N, cur.n)]))
-      }))
-    })
-    colnames(to.ret) <- sprintf("%d", n.seq.rnd)
-    to.ret
-  }
-
-
-
-  ### added
   fastqs.filter <- list(rep(1, length(igblast)))
   for (j in 1:length(igblast)) {
     fastqs.filter[[j]] <- igblast[[j]]$sequence
   }
 
 
-  ###
-
-
   set.seed(1)
   n.seq.rnd <- seq(100, min(n.seqs), 200)
 
-  print(643)
   cov.fastq <- lapply(fastqs.filter, function(x) {
     coverageSeqNum(x, n.seq.rnd)
   })
@@ -206,11 +188,6 @@ for (group in names(groupement)) {
     }
   }
 
-
-
-  print("coverage fin")
+  print("Coverage : DONE")
   dev.off()
 }
-
-
-sessionInfo()

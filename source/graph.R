@@ -12,7 +12,7 @@ package.check <- lapply(packages, function(x) {
       install.packages("BiocManager")
     }
     BiocManager::install(x)
-    library(x, character.only = TRUE)
+    library(x, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)
   }
 })
 print("Package loaded succesfully!")
@@ -125,8 +125,7 @@ axis.names <- c(
 )
 
 
-### CDR3 GRAPHS ####
-
+#Gewnerate graph of the length of the CDR3 region
 longueur.cdr3.lst <- list()
 for (group in names(igblast.lst)) {
   temp <- igblast.lst[[group]]
@@ -149,6 +148,9 @@ for (i in 1:length(longueur.cdr3.lst)) {
 names(toute.cdr3) <- c("G1", "G2", "G3", "GM1", "GM2", "All")
 longueur.cdr3.df <- do.call(rbind.data.frame, toute.cdr3)
 
+
+
+#Generate graph of the cdr3 region of more or less than 40aa
 less.40 <- list()
 more.40 <- list()
 less.40.v <- list()
@@ -177,7 +179,7 @@ for (group in names(igblast.lst)) {
       less.40.v[[group]] <- rbind(less.40.v[[group]], c(v_call = V, n = 0, perc = 0))
     }
   }
-  print(231)
+
   less.40.v[[group]]$perc <- as.numeric(less.40.v[[group]]$perc)
   less.40.v[[group]]$n <- as.numeric(less.40.v[[group]]$n)
   more.40.v[[group]]$perc <- as.numeric(more.40.v[[group]]$perc)
@@ -264,7 +266,7 @@ for (group in names(igblast.lst)) {
     geom_label(aes(y = perc / 2, label = label), color = "black")
   print(plt)
   dev.off()
-  print(167)
+ 
 }
 
 sessionInfo()

@@ -192,17 +192,7 @@ rule name_cleanup:
         logiciel/igblast/bin/edit_imgt_file.pl {input.IN} > {output.OUT}
         """
 
-# Generate heatmaps of the reads composition
-rule heatmap_graph:
-    input:
-        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
-    output:
-        OUT = expand(["graph/heatmap{name}.pdf"],
-        name=["ALL"])
-    shell:
-        """
-        Rscript ./source/heatmappe.R {ID}
-        """
+
 
 # CSV cleanup of igBlast result to save up on ram use
 rule IGblastcsvdrop:
@@ -217,11 +207,35 @@ rule IGblastcsvdrop:
         ./source/rmcol2.sh output
         """
 
+# Generate CSV of the length of reads to save up on ram use
+rule csvLength:
+    input:
+        IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
+        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
+    output:
+        OUT = "csv/done.txt"
+    shell:
+        """
+        Rscript ./source/length_csv.R {ID}
+        """
+
+# Generate graph
+rule heatmap_graph:
+    input:
+        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
+    output:
+        OUT = expand(["graph/heatmap{name}.pdf"],name=["ALL"])
+    shell:
+        """
+        Rscript ./source/heatmappe.R {ID}
+        """
+
 # Generate graph of the length of reads
 rule length_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = "csv/done.txt"
+        IN2 = "csv/done.txt",
+        IN3 = expand(["graph/heatmap{name}.pdf"],name=["ALL"])
     output:
         OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     shell:
@@ -232,7 +246,8 @@ rule length_graph:
 #generate graph of the dropped reads
 rule droppedReads_graph:
     input:
-        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
+        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID),
+        IN2 = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     output:
         OUT = "graph/graphIgBlastDropped.pdf"
     shell:
@@ -244,22 +259,11 @@ rule droppedReads_graph:
 rule coverage_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
+        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID),
+        IN3 = "graph/graphIgBlastDropped.pdf"
     output:
         OUT = expand(["graph/coverage{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     shell:
         """
         Rscript ./source/coverage.R {ID}
-        """
-
-# Generate CSV of the length of reads to save up on ram use
-rule csvLength:
-    input:
-        IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
-    output:
-        OUT = "csv/done.txt"
-    shell:
-        """
-        Rscript ./source/length_csv.R {ID}
         """
