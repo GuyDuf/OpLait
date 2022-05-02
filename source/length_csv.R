@@ -1,7 +1,13 @@
 
+# Author : Guyllaume Dufresne
+# Description : Generate csv files of length of reads
+# Last update : 01/05/22
+
+
+
 #### Chargement des librairies ####
 
-packages = c("ggplot2","viridis","ShortRead", "stringr", "tidyr", "tibble", "dplyr")
+packages = c("ShortRead", "stringr", "tidyr", "tibble", "dplyr")
 
 package.check <- lapply(packages, function(x) {
   if (!require(x, character.only = TRUE)) {
@@ -17,7 +23,7 @@ print("Package loaded succesfully!")
 
 #### Functions ####
 
-#Clean the names of the results from the igblast csv file
+# Only keeps the first result of igBlast
 name_clean_up <- function(string){
   out <- substring(string, first=1 ,last = (str_locate(string = string, pattern = ","))[1] -1)
   if(is.na(out)){
@@ -30,7 +36,9 @@ name_clean_up <- function(string){
 
 #### Arguments ####
 args <- commandArgs(trailingOnly=TRUE)
-#args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
+
+# For testing
+  #args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
 
 id_all <-  sort(unique(args))
 
@@ -45,6 +53,7 @@ groupement <- list("G1" = grep(pattern = "IgG1", x = id_all),
 
 
 igblast.lst <- list()
+
 for(group in names(groupement)){
   echantillons <- id_all[groupement[[group]]]
   chemins_igblast <- sapply(echantillons, function(x) paste("./output/VDJ_", x, ".csv_dropped.csv2", sep = ""),
@@ -75,7 +84,8 @@ for(j in names(igblast.lst)){
     igblast.lst[[j]][[i]]$sequence_alignment <- nchar(igblast.lst[[j]][[i]]$sequence_alignment)
     igblast.lst[[j]][[i]]$cdr3_aa <- nchar(igblast.lst[[j]][[i]]$cdr3_aa)
     
-    igblast.lst[[j]][[i]] <- na.omit(igblast.lst[[j]][[i]])
+    # I want to keep empty IGHD
+    #igblast.lst[[j]][[i]] <- na.omit(igblast.lst[[j]][[i]])
     
   }
 }

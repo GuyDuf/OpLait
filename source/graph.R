@@ -1,5 +1,7 @@
 
-#### Chargement des librairies ####
+# Author : Guyllaume Dufresne
+# Description : Generate graphs
+# Last update : 01/05/22
 
 packages <- c("ggplot2", "viridis", "ShortRead", "stringr", "tidyr", "tibble", "dplyr")
 
@@ -17,7 +19,7 @@ print("Package loaded succesfully!")
 
 #### Functions ####
 
-# Clean the names of the results from the igblast csv file
+# Only keeps the first result of igBlast
 name_clean_up <- function(string) {
   out <- substring(string, first = 1, last = (str_locate(string = string, pattern = ","))[1] - 1)
   if (is.na(out)) {
@@ -30,7 +32,8 @@ name_clean_up <- function(string) {
 
 #### Arguments ####
 args <- commandArgs(trailingOnly = TRUE)
-#args <- c("7-603-IgG2-1_S139", "7-603-IgG2-1_S139", "7-603-IgG3-1_S7", "7-603-IgG3-1_S7", "7-603-IgGM1-1_S51", "28-272-IgGM2-1_S204", "3-241-IgGM2-1_S179", "32-234-IgG1-1_S120", "33-241-IgGM1-1_S77", "35-603-IgG1-1_S123", "36-618-IgGM2-1_S212", "39-279-IgG1-1_S127", "40-281-IgG3-1_S40", "42-637-IgGM2-1_S218", "5-253-IgG1-1_S93", "6-253-IgG2-1_S138", "7-603-IgGM1-1_S51")
+# For testing
+  #args <- c("7-603-IgG2-1_S139","7-603-IgG2-1_S139","7-603-IgG3-1_S7","7-603-IgG3-1_S7","7-603-IgGM1-1_S51","28-272-IgGM2-1_S204","3-241-IgGM2-1_S179","32-234-IgG1-1_S120","33-241-IgGM1-1_S77","35-603-IgG1-1_S123","36-618-IgGM2-1_S212","39-279-IgG1-1_S127","40-281-IgG3-1_S40","42-637-IgGM2-1_S218","5-253-IgG1-1_S93","6-253-IgG2-1_S138","7-603-IgGM1-1_S51")
 
 id_all <- sort(unique(args))
 
@@ -46,7 +49,7 @@ groupement <- list(
 )
 
 
-
+# Make a list of list of reads
 igblast.lst <- list()
 for (group in names(groupement)) {
   echantillons <- id_all[groupement[[group]]]
@@ -58,6 +61,8 @@ for (group in names(groupement)) {
   )
 }
 
+
+# Get the total number of reads in each sample
 total.reads.lst <- list()
 for (group in names(groupement)) {
   chemin_raw_reads <- sapply(id_all[groupement[[group]]], function(x) paste("./data/rawReads/", x, "_L001_R1_001.fastq.gz", sep = ""),
@@ -70,8 +75,8 @@ for (group in names(groupement)) {
   total.reads.lst[group] <- sum(unlist(nbr_raw_reads))
 }
 
-total.reads.df1 <- do.call(cbind.data.frame, total.reads.lst)
-total.reads.df <- data.frame(nbr.reads = t(total.reads.df1)[, 1], class = c("G1", "G2", "G3", "GM1", "GM2", "All"))
+total.reads.df.1 <- do.call(cbind.data.frame, total.reads.lst)
+#total.reads.df.2 <- data.frame(nbr.reads = t(total.reads.df.1)[, 1], class = c("G1", "G2", "G3", "GM1", "GM2", "All"))
 
 IGHV_possible <- c("IGHV1-7", "IGHV1-10", "IGHV1-14", "IGHV1-17", "IGHV1-21/33", "IGHV1-25", "IGHV1-27", "IGHV1-30", "IGHV1-37", "IGHV1-39", "IGHV1-20", "IGHV1-32")
 IGHD_possible <- c("IGHD1-1", "IGHD1-2/4", "IGHD1-3", "IGHD1-4", "IGHD2-1/2/3/4", "IGHD3-1/3/4", "IGHD4-1", "IGHD5-2", "IGHD5-3/4", "IGHD6-2", "IGHD6-3/4", "IGHD7-3", "IGHD7-4", "IGHD8-2", "IGHD9-1/4")
@@ -88,7 +93,7 @@ for (group in names(igblast.lst)) {
     ))
   }
 }
-print(111)
+
 toute <- list()
 for (i in 1:length(longueur.lst)) {
   toute[[i]] <- data.frame(longueur = longueur.lst[[i]], class = names(longueur.lst[i]))
@@ -107,16 +112,16 @@ for (group in names(groupement)) {
 }
 
 
-percent <- formatC(unlist(nbr.row / total.reads.df1) * 100, digits = 2, format = "f")
+percent <- formatC(unlist(nbr.row / total.reads.df.1) * 100, digits = 2, format = "f")
 
 options(scipen = 1000000)
 axis.names <- c(
-  paste("G1 \n n = ", nbr.row[["G1"]], "\n", formatC(unlist(percent[1]), digits = 2, format = "f"),   "% of", "\n", total.reads.df1$G1, " reads", sep = ""),
-  paste("G2 \n n = ", nbr.row[["G2"]], "\n", formatC(unlist(percent[2]), digits = 2, format = "f"),   "% of", "\n", total.reads.df1$G2, " reads", sep = ""),
-  paste("G3 \n n = ", nbr.row[["G3"]], "\n", formatC(unlist(percent[3]), digits = 2, format = "f"),   "% of", "\n", total.reads.df1$G3, " reads", sep = ""),
-  paste("GM1 \n n = ", nbr.row[["GM1"]], "\n", formatC(unlist(percent[4]), digits = 2, format = "f"), "% of", "\n", total.reads.df1$GM1, " reads", sep = ""),
-  paste("GM2 \n n = ", nbr.row[["GM2"]], "\n", formatC(unlist(percent[5]), digits = 2, format = "f"), "% of", "\n", total.reads.df1$GM2, " reads", sep = ""),
-  paste("All \n n = ", nbr.row[["All"]], "\n", formatC(unlist(percent[6]), digits = 2, format = "f"), "% of", "\n", total.reads.df1$All, " reads", sep = "")
+  paste("G1 \n n = ", nbr.row[["G1"]], "\n", formatC(unlist(percent[1]), digits = 2, format = "f"),   "% of", "\n", total.reads.df.1$G1, " reads", sep = ""),
+  paste("G2 \n n = ", nbr.row[["G2"]], "\n", formatC(unlist(percent[2]), digits = 2, format = "f"),   "% of", "\n", total.reads.df.1$G2, " reads", sep = ""),
+  paste("G3 \n n = ", nbr.row[["G3"]], "\n", formatC(unlist(percent[3]), digits = 2, format = "f"),   "% of", "\n", total.reads.df.1$G3, " reads", sep = ""),
+  paste("GM1 \n n = ", nbr.row[["GM1"]], "\n", formatC(unlist(percent[4]), digits = 2, format = "f"), "% of", "\n", total.reads.df.1$GM1, " reads", sep = ""),
+  paste("GM2 \n n = ", nbr.row[["GM2"]], "\n", formatC(unlist(percent[5]), digits = 2, format = "f"), "% of", "\n", total.reads.df.1$GM2, " reads", sep = ""),
+  paste("All \n n = ", nbr.row[["All"]], "\n", formatC(unlist(percent[6]), digits = 2, format = "f"), "% of", "\n", total.reads.df.1$All, " reads", sep = "")
 )
 
 
@@ -135,12 +140,7 @@ for (group in names(igblast.lst)) {
     )
   }
 }
-#  for(group in names(igblast.lst)){
-#    for(i in 1:length(igblast.lst[[group]])){
-#      print(group)
-#      print(i)
-#      print(cor(nchar(igblast.lst[[group]][[i]]$cdr3_aa), nchar(igblast.lst[[group]][[i]]$sequence_alignment)))}
-#  }
+
 
 toute.cdr3 <- list()
 for (i in 1:length(longueur.cdr3.lst)) {
@@ -266,168 +266,5 @@ for (group in names(igblast.lst)) {
   dev.off()
   print(167)
 }
-#pdf("graph/length.pdf", width = 15, height = 15)
-#
-#plt <- ggplot(data = longueur.df, aes(x = class, y = longueur)) +
-#  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
-#  geom_boxplot(width = 0.1, fill = "lightblue") +
-#  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
-#  labs(
-#    title = "Valid sequences length",
-#    y = "Sequence length (nt)",
-#    x = "Class"
-#  ) +
-#  theme_light() +
-#  theme(
-#    title = element_text(size = 20, face = "bold"),
-#    axis.title.x = element_text(vjust = 0, size = 20),
-#    axis.title.y = element_text(vjust = 2, size = 20),
-#    axis.text = element_text(color = "black", face = "bold", size = 17),
-#    axis.text.x = element_text(face = "bold", size = 16)
-#  ) +
-#  scale_x_discrete(labels = axis.names)
-#
-#print(plt)
-#
-#print(189)
-#plt <- ggplot(data = longueur.cdr3.df, aes(x = class, y = longueur)) +
-#  geom_violin(trim = TRUE, color = "black", bw = 0.75, fill = "grey90") +
-#  geom_boxplot(width = 0.1, fill = "lightblue") +
-#  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
-#  labs(
-#    title = "Length of CDR3 region",
-#    y = "Length of region (AA)",
-#    x = "Class"
-#  ) +
-#  theme_light() +
-#  theme(
-#    title = element_text(size = 20, face = "bold"),
-#    axis.title.x = element_text(vjust = 0, size = 20),
-#    axis.title.y = element_text(vjust = 2, size = 20),
-#    axis.text = element_text(color = "black", face = "bold", size = 17),
-#    axis.text.x = element_text(face = "bold", size = 16)
-#  ) +
-#  scale_x_discrete(labels = axis.names)
-#
-#print(plt)
-#
-#
-#longueur.cdr3.df.more <- longueur.cdr3.df[longueur.cdr3.df$longueur >= 40,]
-#nbr.more <- list()
-#for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
-#  nbr.more[[group]] = nrow(longueur.cdr3.df.more[longueur.cdr3.df.more$class == group,])
-#}
-#percent.more <- list()
-#for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
-#  percent.more[[group]] = nbr.more[[group]]/total.reads.lst[[group]]
-#}
-#
-#
-#
-#axis.names.more <- c(
-#  paste("G1 \n n = ",  nbr.more[["G1"]],  "\n",  formatC(unlist(percent.more[["G1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G1,  " reads", sep = ""),
-#  paste("G2 \n n = ",  nbr.more[["G2"]],  "\n",  formatC(unlist(percent.more[["G2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G2,  " reads", sep = ""),
-#  paste("G3 \n n = ",  nbr.more[["G3"]],  "\n",  formatC(unlist(percent.more[["G3"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G3,  " reads", sep = ""),
-#  paste("GM1 \n n = ", nbr.more[["GM1"]], "\n", formatC(unlist(percent.more[["GM1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$GM1, " reads", sep = ""),
-#  paste("GM2 \n n = ", nbr.more[["GM2"]], "\n", formatC(unlist(percent.more[["GM2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$GM2, " reads", sep = ""),
-#  paste("All \n n = ", nbr.more[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$All, " reads", sep = "")
-#)
-#
-#plt <- ggplot(data = longueur.cdr3.df.more, aes(x = class, y = longueur))+
-#  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
-#  geom_boxplot(width = 0.1, fill = "lightblue") +
-#  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
-#  labs(
-#    title = "Valid sequences length with cdr3 >= 40 AA",
-#    y = "Sequence length (nt)",
-#    x = "Class") +
-#  theme_light() +
-#  theme(title = element_text(size = 20, face = "bold"),
-#        axis.title.x = element_text(vjust = 0, size = 20),
-#        axis.title.y = element_text(vjust = 2, size = 20),
-#        axis.text = element_text(color = "black", face = "bold", size = 17),
-#        axis.text.x = element_text(face = "bold", size = 16)) +
-#  scale_x_discrete(labels = axis.names.more)
-#
-#print(plt)
-#
-#
-#longueur.cdr3.df.less <- longueur.cdr3.df[longueur.cdr3.df$longueur < 40,]
-#nbr.less <- list()
-#for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
-#  nbr.less[[group]] = nrow(longueur.cdr3.df.less[longueur.cdr3.df.less$class == group,])
-#}
-#percent.less <- list()
-#for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
-#  percent.less[[group]] = nrow(nbr.less[[group]])/total.reads.lst[[group]]
-#}
-#
-#axis.names.less <- c(
-#  paste("G1 \n n = ",  nbr.less[["G1"]],  "\n",  formatC(unlist(percent.more[["G1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G1,  " reads", sep = ""),
-#  paste("G2 \n n = ",  nbr.less[["G2"]],  "\n",  formatC(unlist(percent.more[["G2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G2,  " reads", sep = ""),
-#  paste("G3 \n n = ",  nbr.less[["G3"]],  "\n",  formatC(unlist(percent.more[["G3"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$G3,  " reads", sep = ""),
-#  paste("GM1 \n n = ", nbr.less[["GM1"]], "\n", formatC(unlist(percent.more[["GM1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$GM1, " reads", sep = ""),
-#  paste("GM2 \n n = ", nbr.less[["GM2"]], "\n", formatC(unlist(percent.more[["GM2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$GM2, " reads", sep = ""),
-#  paste("All \n n = ", nbr.less[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df1$All, " reads", sep = "")
-#)
-#
-#
-#
-#plt <- ggplot(data = longueur.cdr3.df.less, aes(x = class, y = longueur))+
-#  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
-#  geom_boxplot(width = 0.1, fill = "lightblue") +
-#  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
-#  labs(
-#    title = "Valid sequences length with cdr3 < 40 AA",
-#    y = "Sequence length (AA)",
-#    x = "Class") +
-#  theme_light() +
-#  theme(title = element_text(size = 20, face = "bold"),
-#        axis.title.x = element_text(vjust = 0, size = 20),
-#        axis.title.y = element_text(vjust = 2, size = 20),
-#        axis.text = element_text(color = "black", face = "bold", size = 17),
-#        axis.text.x = element_text(face = "bold", size = 16)) +
-#  scale_x_discrete(labels = axis.names.less)
-#
-#print(plt)
-#dev.off()
-#
-sessionInfo()
-##
-## # overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
-## #                   simplify = FALSE, USE.NAMES = TRUE)
-##  data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
-##  temp.df <- sapply(names(longueur),
-##                    function(x) data.frame(longueur_overlap = overlap[[x]],
-##                                           nom = rep(x, length(overlap[[x]]))),
-##                    simplify = FALSE, USE.NAMES = TRUE)
-##  for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
-#
-#  catego <- str_sub(str_extract(data_overlap$nom, "-+...?"),2,4)
-#  temp_plot <- ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
-#    geom_violin(color = "black", fill = "darkblue")+
-#    geom_boxplot(width=0.1, fill = "light blue")+
-#    stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
-#    labs(title = "Longueur de l'overlap lors de NGMerge",
-#         y = "Longueur de l'overlap (nt)",
-#         x = "Echantillon")+
-#    theme(title = element_text(size = 12, face = 'bold'),
-#          axis.title.x = element_text(vjust = 0, size = 15),
-#          axis.title.y = element_text(vjust = 2, size = 15),
-#          axis.text    = element_text(color = "black", face = "bold", size = 14),
-#          axis.text.x  = element_text(face = "bold", size = 13))+
-#    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+
-#    scale_fill_discrete(name = "Cow #")
-#  print(temp_plot)
-#  print("Boxplot Overlap NGMerge : DONE")
-#
-#  dev.off()
-#  print("dev.off")
-#  remove(igblast)
-#  print("IgBlast Removed")
-#  remove(ngmerge)
-#  print("Ngmerge removed")
-#  gc()
-#  print("gc()")
-#
+
 sessionInfo()

@@ -8,11 +8,9 @@ rule all:
             "output/VDJ_{id}.csv",
             "output/multiqc_report.html",
             "graph/moss_{group}.pdf",
-            "graph/length.pdf",
             "output/VDJ_{id}.csv_dropped.csv1",
             "output/VDJ_{id}.csv_dropped.csv2",
-            #"graph/graph_3.pdf",
-            #"graph/heatmap{name}.pdf",
+            "graph/heatmap{name}.pdf",
             "graph/coverage{group}.pdf",
             "graph/graphIgBlastDropped.pdf",
             "csv/done.txt",
@@ -23,6 +21,8 @@ rule all:
             extension2=["ndb","nhr","nin","nog","nos","not","nsq","ntf","nto"],
             group=["G1","G2","G3","GM1","GM2","All"])
 
+
+# Generate a QC for raw reads
 rule rawfastqc:
     input:
         rawread="data/rawReads/{id}_L001_{read}_001.fastq.gz"
@@ -37,7 +37,10 @@ rule rawfastqc:
         """
         logiciel/FastQC/fastqc {input.rawread} --threads {threads} -o {params.path}
         """
-
+# Trimm rawReads
+# remove nt with a score lesser than 3 at the head and the tail of the read
+# Use a sliding window of 4nt and if the average score dips below 15 it cut the read there
+# Only keep reads with a minimum length of 100nt
 rule trimmomatic:
     input:
         read1="data/rawReads/{id}_L001_R1_001.fastq.gz",
@@ -54,6 +57,7 @@ rule trimmomatic:
         """
         #	Trimming occurs in the order which the steps are specified on the command line.
 
+# Generate QC from the trimmed reads
 rule trimfastqc:
     input:
         trimread1="data/trimmedReads/{id}_1P.fastq",
@@ -72,6 +76,7 @@ rule trimfastqc:
         logiciel/FastQC/fastqc {input.trimread1} {input.trimread2} --threads {threads} -o {params.path}
         """
 
+# Merge the forward and reverse of kept reads
 rule NGmerge:
     input:
         read1="data/trimmedReads/{id}_1P.fastq",
@@ -86,6 +91,7 @@ rule NGmerge:
         logiciel/NGmerge/NGmerge -1 {input.read1} -2 {input.read2} -o {output.fastq} -l {output.log} -n {threads}
         """
 
+# Generate QC of the merged reads
 rule mergedfastqc:
     input:
         mergedread="data/mergedReads/{id}.fastq"
@@ -101,6 +107,7 @@ rule mergedfastqc:
         logiciel/FastQC/fastqc {input.mergedread} --threads {threads} -o {params.path}
         """
 
+# Find the composition (IGHV, IGHJ, IGHD) of each reads
 rule igblast:
     input:
         mergedread = "output/{id}.fasta",
@@ -116,6 +123,7 @@ rule igblast:
         logiciel/igblast/bin/igblastn -germline_db_V {input.IGHV} -germline_db_J {input.IGHJ} -germline_db_D {input.IGHD} -organism bovine -query {input.mergedread} -auxiliary_data logiciel/igblast/optional_file/bovine_gl.aux -outfmt 19 > {output.out}
         """
 
+# Translate fastq files to fasta
 rule fastq2fasta:
     input:
         IN = "data/mergedReads/{id}.fastq"
@@ -126,6 +134,7 @@ rule fastq2fasta:
         sed -n '1~4s/^@/>/p;2~4p' {input.IN} > {output.OUT}
         """
 
+# Generate a overall QC
 rule multiqc:
     input:
        # IN = "output/graph.pdf"
@@ -137,6 +146,7 @@ rule multiqc:
         multiqc ./output ./data -o output
         """
 
+# Generate the database of IGHV to use with igBlast
 rule database_IGHV:
     input:
         IN = "logiciel/igblast/database/IGHV_clean.fa"
@@ -148,6 +158,7 @@ rule database_IGHV:
         logiciel/igblast/bin/makeblastdb -parse_seqids -dbtype nucl -in {input.IN}
         """
 
+# Generate the database of IGHD to use with igBlast
 rule database_IGHD:
     input:
         IN = "logiciel/igblast/database/IGHD_clean.fa"
@@ -159,7 +170,7 @@ rule database_IGHD:
         logiciel/igblast/bin/makeblastdb -parse_seqids -dbtype nucl -in {input.IN}
         """
 
-
+# Generate the database of IGHJ to use with igBlast
 rule database_IGHJ:
     input:
         IN = "logiciel/igblast/database/IGHJ_clean.fa"
@@ -170,7 +181,7 @@ rule database_IGHJ:
         """
         logiciel/igblast/bin/makeblastdb -parse_seqids -dbtype nucl -in {input.IN}
         """
-
+# Clean up the name to use with makeblastdb
 rule name_cleanup:
     input:
         IN = "logiciel/igblast/database/{segment}.fa"
@@ -181,7 +192,8 @@ rule name_cleanup:
         logiciel/igblast/bin/edit_imgt_file.pl {input.IN} > {output.OUT}
         """
 
-rule heatmap:
+# Generate heatmaps of the reads composition
+rule heatmap_graph:
     input:
         IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
     output:
@@ -192,6 +204,7 @@ rule heatmap:
         Rscript ./source/heatmappe.R {ID}
         """
 
+# CSV cleanup of igBlast result to save up on ram use
 rule IGblastcsvdrop:
     input:
         IN = expand(["output/VDJ_{id}.csv"], id = ID)
@@ -204,19 +217,20 @@ rule IGblastcsvdrop:
         ./source/rmcol2.sh output
         """
 
-rule graph:
+# Generate graph of the length of reads
+rule length_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
         IN2 = "csv/done.txt"
     output:
-        OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"]),
-        OUT2= "graph/length.pdf"
+        OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     shell:
         """
         Rscript ./source/graph.R {ID}
         """
 
-rule graphIgBlastDropped:
+#generate graph of the dropped reads
+rule droppedReads_graph:
     input:
         IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
     output:
@@ -226,7 +240,8 @@ rule graphIgBlastDropped:
         Rscript ./source/IgBlastDropped.R {ID}
         """
 
-rule coverage:
+#generate graph of the coverage
+rule coverage_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
         IN2 = expand(["output/VDJ_{id}.csv_dropped.csv2"], id = ID)
@@ -236,6 +251,8 @@ rule coverage:
         """
         Rscript ./source/coverage.R {ID}
         """
+
+# Generate CSV of the length of reads to save up on ram use
 rule csvLength:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
