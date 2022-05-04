@@ -60,10 +60,6 @@ args <- commandArgs(trailingOnly = TRUE)
 
 id_all <- sort(unique(args))
 
-print(args)
-print(id_all)
-
-
 # create group of class
 groupement <- list(
   "G1" = grep(pattern = "IgG1", x = id_all),

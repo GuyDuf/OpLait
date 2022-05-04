@@ -125,7 +125,7 @@ axis.names <- c(
 )
 
 
-#Gewnerate graph of the length of the CDR3 region
+#Generate graph of the length of the CDR3 region
 longueur.cdr3.lst <- list()
 for (group in names(igblast.lst)) {
   temp <- igblast.lst[[group]]
@@ -147,7 +147,6 @@ for (i in 1:length(longueur.cdr3.lst)) {
 }
 names(toute.cdr3) <- c("G1", "G2", "G3", "GM1", "GM2", "All")
 longueur.cdr3.df <- do.call(rbind.data.frame, toute.cdr3)
-
 
 
 #Generate graph of the cdr3 region of more or less than 40aa
@@ -268,5 +267,172 @@ for (group in names(igblast.lst)) {
   dev.off()
  
 }
+pdf("graph/length.pdf", width = 15, height = 15)
+
+plt <- ggplot(data = longueur.df, aes(x = class, y = longueur)) +
+  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
+  geom_boxplot(width = 0.1, fill = "lightblue") +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
+  labs(
+    title = "Valid sequences length",
+    y = "Sequence length (nt)",
+    x = "Class"
+  ) +
+  theme_light() +
+  theme(
+    title = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(vjust = 0, size = 20),
+    axis.title.y = element_text(vjust = 2, size = 20),
+    axis.text = element_text(color = "black", face = "bold", size = 17),
+    axis.text.x = element_text(face = "bold", size = 16)
+  ) +
+  scale_x_discrete(labels = axis.names)
+
+print(plt)
+
+
+plt <- ggplot(data = longueur.cdr3.df, aes(x = class, y = longueur)) +
+  geom_violin(trim = TRUE, color = "black", bw = 0.75, fill = "grey90") +
+  geom_boxplot(width = 0.1, fill = "lightblue") +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
+  labs(
+    title = "Length of CDR3 region",
+    y = "Length of region (AA)",
+    x = "Class"
+  ) +
+  theme_light() +
+  theme(
+    title = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(vjust = 0, size = 20),
+    axis.title.y = element_text(vjust = 2, size = 20),
+    axis.text = element_text(color = "black", face = "bold", size = 17),
+    axis.text.x = element_text(face = "bold", size = 16)
+  ) +
+  scale_x_discrete(labels = axis.names)
+
+print(plt)
+
+
+longueur.cdr3.df.more <- longueur.cdr3.df[longueur.cdr3.df$longueur >= 40,]
+nbr.more <- list()
+for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
+  nbr.more[[group]] = nrow(longueur.cdr3.df.more[longueur.cdr3.df.more$class == group,])
+}
+percent.more <- list()
+for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
+  percent.more[[group]] = nbr.more[[group]]/total.reads.lst[[group]]
+}
+
+
+
+axis.names.more <- c(
+  paste("G1 \n n = ",  nbr.more[["G1"]],  "\n",  formatC(unlist(percent.more[["G1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G1,  " reads", sep = ""),
+  paste("G2 \n n = ",  nbr.more[["G2"]],  "\n",  formatC(unlist(percent.more[["G2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G2,  " reads", sep = ""),
+  paste("G3 \n n = ",  nbr.more[["G3"]],  "\n",  formatC(unlist(percent.more[["G3"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G3,  " reads", sep = ""),
+  paste("GM1 \n n = ", nbr.more[["GM1"]], "\n", formatC(unlist(percent.more[["GM1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$GM1, " reads", sep = ""),
+  paste("GM2 \n n = ", nbr.more[["GM2"]], "\n", formatC(unlist(percent.more[["GM2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$GM2, " reads", sep = ""),
+  paste("All \n n = ", nbr.more[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$All, " reads", sep = "")
+)
+
+plt <- ggplot(data = longueur.cdr3.df.more, aes(x = class, y = longueur))+
+  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90")+
+  geom_boxplot(width = 0.1, fill = "lightblue") +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
+  labs(
+    title = "Valid sequences length with cdr3 >= 40 AA",
+    y = "Sequence length (nt)",
+    x = "Class")+
+  theme_light() +
+  theme(title = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(vjust = 0, size = 20),
+        axis.title.y = element_text(vjust = 2, size = 20),
+        axis.text = element_text(color = "black", face = "bold", size = 17),
+        axis.text.x = element_text(face = "bold", size = 16)) +
+  scale_x_discrete(labels = axis.names.more)
+
+print(plt)
+
+
+longueur.cdr3.df.less <- longueur.cdr3.df[longueur.cdr3.df$longueur < 40,]
+nbr.less <- list()
+for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
+  nbr.less[[group]] = nrow(longueur.cdr3.df.less[longueur.cdr3.df.less$class == group,])
+}
+percent.less <- list()
+for(group in c("G1", "G2", "G3", "GM1", "GM2", "All")){
+  percent.less[[group]] = nrow(nbr.less[[group]])/total.reads.lst[[group]]
+}
+
+axis.names.less <- c(
+  paste("G1 \n n = ",  nbr.less[["G1"]],  "\n",  formatC(unlist(percent.more[["G1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G1,  " reads", sep = ""),
+  paste("G2 \n n = ",  nbr.less[["G2"]],  "\n",  formatC(unlist(percent.more[["G2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G2,  " reads", sep = ""),
+  paste("G3 \n n = ",  nbr.less[["G3"]],  "\n",  formatC(unlist(percent.more[["G3"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$G3,  " reads", sep = ""),
+  paste("GM1 \n n = ", nbr.less[["GM1"]], "\n", formatC(unlist(percent.more[["GM1"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$GM1, " reads", sep = ""),
+  paste("GM2 \n n = ", nbr.less[["GM2"]], "\n", formatC(unlist(percent.more[["GM2"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$GM2, " reads", sep = ""),
+  paste("All \n n = ", nbr.less[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$All, " reads", sep = "")
+)
+
+
+
+plt <- ggplot(data = longueur.cdr3.df.less, aes(x = class, y = longueur))+
+  geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
+  geom_boxplot(width = 0.1, fill = "lightblue") +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 2) +
+  labs(
+    title = "Valid sequences length with cdr3 < 40 AA",
+    y = "Sequence length (AA)",
+    x = "Class") +
+  theme_light() +
+  theme(title = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(vjust = 0, size = 20),
+        axis.title.y = element_text(vjust = 2, size = 20),
+        axis.text = element_text(color = "black", face = "bold", size = 17),
+        axis.text.x = element_text(face = "bold", size = 16)) +
+  scale_x_discrete(labels = axis.names.less)
+
+print(plt)
+
+
+
+
+#### Use a lot of memory
+## NGmerge
+#chemins_ngmerge <- sapply(id_all, function(x) paste("./data/mergedReads/", x, ".log", sep =""),
+#                          simplify = FALSE, USE.NAMES = TRUE)
+#ngmerge <-  sapply(chemins_ngmerge, function(x) read.csv(x, sep= "\t", na.strings=c("NA")),
+#                   simplify = FALSE, USE.NAMES = TRUE)
+
+#print("NGmerge loaded")
+
+# Generate graph of verlap of reads in NGMerge
+
+#overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
+#                  simplify = FALSE, USE.NAMES = TRUE)
+#data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
+#temp.df <- sapply(names(ngmerge),
+#                  function(x) data.frame(longueur_overlap = overlap[[x]],
+#                                         nom = rep(str_extract(x, "G[123M][12]?"), length(overlap[[x]]))),
+#                  simplify = FALSE, USE.NAMES = TRUE)
+#
+#
+#for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
+
+#temp_plot <- ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
+#  geom_violin(trim = TRUE, color = "black", fill = "grey90") +
+#  geom_boxplot(width = 0.1, fill = "lightblue") +
+#  stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
+#  labs(title = "Longueur de l'overlap lors de NGMerge",
+#       y = "Longueur de l'overlap (nt)",
+#       x = "Echantillon")+
+#  theme_light()+
+#  theme(title = element_text(size = 12, face = 'bold'),
+#        axis.title.x = element_text(vjust = 0, size = 15),
+#        axis.title.y = element_text(vjust = 2, size = 15),
+#        axis.text    = element_text(color = "black", face = "bold", size = 14),
+#        axis.text.x  = element_text(face = "bold", size = 13))
+
+#print(temp_plot)
+dev.off()
+
 
 sessionInfo()

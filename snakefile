@@ -14,6 +14,9 @@ rule all:
             "graph/coverage{group}.pdf",
             "graph/graphIgBlastDropped.pdf",
             "csv/done.txt",
+            "graph/length.pdf",
+            "out/distribution{group}_prop.rds",
+            "out/distribution{group}_nbr.rds",
             "logiciel/igblast/database/{segment}_clean.fa.{extension2}"],
             id=ID, read=READ, paired=["1P","2P"], extension=["zip","html"],
             name=["ALL"],
@@ -234,10 +237,10 @@ rule heatmap_graph:
 rule length_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = "csv/done.txt",
-        IN3 = expand(["graph/heatmap{name}.pdf"],name=["ALL"])
+        IN2 = "csv/done.txt"
     output:
-        OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
+        OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"]),
+        OUT2 = "graph/length.pdf"
     shell:
         """
         Rscript ./source/graph.R {ID}
@@ -246,8 +249,7 @@ rule length_graph:
 #generate graph of the dropped reads
 rule droppedReads_graph:
     input:
-        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID),
-        IN2 = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
+        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
     output:
         OUT = "graph/graphIgBlastDropped.pdf"
     shell:
@@ -266,4 +268,17 @@ rule coverage_graph:
     shell:
         """
         Rscript ./source/coverage.R {ID}
+        """
+
+
+#generate rdata file IGH composition
+rule rdata:
+    input:
+        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
+    output:
+        OUT = expand(["out/distribution{group}_prop.rds"], group = ["G1","G2","G3","GM1","GM2","All"]),
+        OUT2 = expand(["out/distribution{group}_nbr.rds"], group = ["G1","G2","G3","GM1","GM2","All"])
+    shell:
+        """
+        Rscript ./source/matrix.R {ID}
         """
