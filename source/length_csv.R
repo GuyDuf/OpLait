@@ -96,4 +96,6 @@ for(group in names(groupement)){
     }
 }
 
+
+# create file for snakemake
 write.table(x = c("delete me only to clear the folder"), file = "csv/done.txt")

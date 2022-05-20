@@ -208,6 +208,7 @@ for (group in names(igblast.lst)) {
   labels <- paste(more.40.v[[group]]$n, "\n", formatC(more.40.v[[group]]$perc, digits = 2, format = "f"), "%", sep = "")
   more.40.v[[group]]$label <- labels
 
+  saveRDS(moss.40.v[[group]], file = paste("out/more_less_40_v_",group,".rds", sep=""))
   plt <- ggplot(data = moss.40.v[[group]], aes(x = v_call, y = perc, fill = moss)) +
     geom_bar(stat = "identity") +
     theme_light() +
@@ -228,7 +229,9 @@ for (group in names(igblast.lst)) {
     ) +
     geom_label(aes(y = position, label = label), color = "black", fill = c(rep("lightblue2", 12), rep("lightcoral", 12)))
   print(plt)
-
+  
+  
+  saveRDS(less.40.v[[group]], file = paste("out/less_40_v_",group,".rds", sep=""))
   plt <- ggplot(data = less.40.v[[group]], aes(x = v_call, y = perc)) +
     geom_bar(stat = "identity") +
     theme_light() +
@@ -246,7 +249,8 @@ for (group in names(igblast.lst)) {
     ) +
     geom_label(aes(y = perc / 2, label = label), color = "black")
   print(plt)
-
+  
+  saveRDS(more.40.v[[group]], file = paste("out/more_40_v_",group,".rds", sep=""))
   plt <- ggplot(data = more.40.v[[group]], aes(x = v_call, y = perc)) +
     geom_bar(stat = "identity") +
     theme_light() +
@@ -267,6 +271,9 @@ for (group in names(igblast.lst)) {
   dev.off()
  
 }
+
+saveRDS(longueur.df, file = "out/longueur.rds")
+
 pdf("graph/length.pdf", width = 15, height = 15)
 
 plt <- ggplot(data = longueur.df, aes(x = class, y = longueur)) +
@@ -290,6 +297,7 @@ plt <- ggplot(data = longueur.df, aes(x = class, y = longueur)) +
 
 print(plt)
 
+saveRDS(longueur.cdr3.df, file = "out/longueur_cdr3.rds")
 
 plt <- ggplot(data = longueur.cdr3.df, aes(x = class, y = longueur)) +
   geom_violin(trim = TRUE, color = "black", bw = 0.75, fill = "grey90") +
@@ -334,6 +342,8 @@ axis.names.more <- c(
   paste("All \n n = ", nbr.more[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$All, " reads", sep = "")
 )
 
+saveRDS(longueur.cdr3.df.more, file = "out/longueur_cdr3_more.rds")
+
 plt <- ggplot(data = longueur.cdr3.df.more, aes(x = class, y = longueur))+
   geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90")+
   geom_boxplot(width = 0.1, fill = "lightblue") +
@@ -372,7 +382,7 @@ axis.names.less <- c(
   paste("All \n n = ", nbr.less[["All"]], "\n", formatC(unlist(percent.more[["All"]]), digits = 4, format = "f"),  "% of", "\n", total.reads.df.1$All, " reads", sep = "")
 )
 
-
+saveRDS(longueur.cdr3.df.less, file = "out/longueur_cdr3_less.rds")
 
 plt <- ggplot(data = longueur.cdr3.df.less, aes(x = class, y = longueur))+
   geom_violin(trim = TRUE, color = "black", bw = 1.75, fill = "grey90") +
@@ -393,45 +403,6 @@ plt <- ggplot(data = longueur.cdr3.df.less, aes(x = class, y = longueur))+
 print(plt)
 
 
-
-
-#### Use a lot of memory
-## NGmerge
-#chemins_ngmerge <- sapply(id_all, function(x) paste("./data/mergedReads/", x, ".log", sep =""),
-#                          simplify = FALSE, USE.NAMES = TRUE)
-#ngmerge <-  sapply(chemins_ngmerge, function(x) read.csv(x, sep= "\t", na.strings=c("NA")),
-#                   simplify = FALSE, USE.NAMES = TRUE)
-
-#print("NGmerge loaded")
-
-# Generate graph of verlap of reads in NGMerge
-
-#overlap <- sapply(names(ngmerge), function(x) ngmerge[[x]]$OverlapLen,
-#                  simplify = FALSE, USE.NAMES = TRUE)
-#data_overlap <- data.frame(longueur_overlap = NA, nom = NA)
-#temp.df <- sapply(names(ngmerge),
-#                  function(x) data.frame(longueur_overlap = overlap[[x]],
-#                                         nom = rep(str_extract(x, "G[123M][12]?"), length(overlap[[x]]))),
-#                  simplify = FALSE, USE.NAMES = TRUE)
-#
-#
-#for(i in (1:length(temp.df))) data_overlap <- rbind(data_overlap, temp.df[[i]])
-
-#temp_plot <- ggplot(data = data_overlap[!is.na(data_overlap$nom),], mapping = aes(x = nom, y = longueur_overlap))+
-#  geom_violin(trim = TRUE, color = "black", fill = "grey90") +
-#  geom_boxplot(width = 0.1, fill = "lightblue") +
-#  stat_summary(fun=mean, color = "black", geom="point", shape=23, size=2)+
-#  labs(title = "Longueur de l'overlap lors de NGMerge",
-#       y = "Longueur de l'overlap (nt)",
-#       x = "Echantillon")+
-#  theme_light()+
-#  theme(title = element_text(size = 12, face = 'bold'),
-#        axis.title.x = element_text(vjust = 0, size = 15),
-#        axis.title.y = element_text(vjust = 2, size = 15),
-#        axis.text    = element_text(color = "black", face = "bold", size = 14),
-#        axis.text.x  = element_text(face = "bold", size = 13))
-
-#print(temp_plot)
 dev.off()
 
 

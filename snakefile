@@ -237,7 +237,8 @@ rule heatmap_graph:
 rule length_graph:
     input:
         IN  = expand(["data/rawReads/{id}_L001_R1_001.fastq.gz"],id=ID),
-        IN2 = "csv/done.txt"
+        IN2 = "csv/done.txt",
+        IN3 = expand(["graph/coverage{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"])
     output:
         OUT = expand(["graph/moss_{group}.pdf"], group = ["G1","G2","G3","GM1","GM2","All"]),
         OUT2 = "graph/length.pdf"
@@ -249,7 +250,8 @@ rule length_graph:
 #generate graph of the dropped reads
 rule droppedReads_graph:
     input:
-        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID)
+        IN = expand(["output/VDJ_{id}.csv_dropped.csv1"], id = ID),
+        IN2 = expand(["graph/heatmap{name}.pdf"],name=["ALL"])
     output:
         OUT = "graph/graphIgBlastDropped.pdf"
     shell:

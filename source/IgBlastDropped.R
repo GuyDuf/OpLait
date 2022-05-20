@@ -280,6 +280,9 @@ y.pos <- data.frame(
 y.pos$Label <- formatC(y.pos$Label, digits = 2, format = "f")
 y.pos$Label <- paste(y.pos$Label, "%", sep = "")
 
+
+saveRDS(frct_lost, file = "out/dropped.rds")
+
 #generate the graph with all reasons
 plt <- ggplot() +
   geom_bar(data = frct_lost, aes(x = Class, y =Percent, fill = Reason), stat = "identity", position = "stack") +
